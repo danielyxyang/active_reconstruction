@@ -1,0 +1,3 @@
+# Near-optimal Active Reconstruction
+
+Work still in progress...
