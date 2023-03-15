@@ -182,6 +182,7 @@ class Object():
         p1 = polar_to_cartesian(p1[0], p1[1])
         p2 = polar_to_cartesian(p2[0], p2[1])
         
+        # check for numerical stability of division
         if p2[0] - p1[0] > p2[1] - p1[1]:
             # compute parameters of line equation in x-coordinate
             m = (p2[1] - p1[1]) / (p2[0] - p1[0])

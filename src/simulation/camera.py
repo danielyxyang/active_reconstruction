@@ -145,11 +145,12 @@ class Camera():
         """Return function describing casted ray in polar coordinates."""
         x, y = polar_to_cartesian(self.theta, CAM_D)
         alpha = self.theta + beta
+        # check for numerical stability of tan and cot
         if (alpha + np.pi/4) % np.pi < np.pi / 2: # use y = mx + b
             m = np.tan(alpha)
             b = y - m*x
             return lambda phi: b / (np.sin(phi) - m * np.cos(phi))
         else: # use x = my + b
-            m = np.tan(np.pi/2 - alpha)
+            m = np.cot(alpha)
             b = x - m*y
             return lambda phi: b / (np.cos(phi) - m * np.sin(phi))
