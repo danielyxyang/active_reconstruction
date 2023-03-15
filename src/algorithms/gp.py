@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.gaussian_process.kernels import RBF, ExpSineSquared, Matern
+from scipy.spatial.distance import cdist
+from sklearn.gaussian_process.kernels import RBF, ExpSineSquared, Matern, _check_length_scale
 
 from parameters import OBJ_D_AVG
 from utils.helpers import polar_to_cartesian, polar_to_pixel
@@ -127,28 +128,131 @@ def build_mean():
 
 def build_kernel_rbf(sigma=1, l=1):
     k = RBF(length_scale=l)
-    def kernel(x1, x2):
-        return sigma**2 * k(x1, x2)
+    def kernel(X1, X2):
+        return sigma**2 * k(X1, X2)
     return kernel
 
 
 def build_kernel_periodic(sigma=1, l=1):
     k = ExpSineSquared(length_scale=l, periodicity=2*np.pi)
-    def kernel(x1, x2):
-        return sigma**2 * k(x1, x2)
+    def kernel(X1, X2):
+        return sigma**2 * k(X1, X2)
     return kernel
 
 
 def build_kernel_matern(sigma=1, l=1, nu=1.5):
     k = Matern(length_scale=l, nu=nu)
-    def kernel(x1, x2):
-        return sigma**2 * k(x1, x2)
+    def kernel(X1, X2):
+        return sigma**2 * k(X1, X2)
     return kernel
 
 
-def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5, n_approx=1):
+def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5):
+    if nu == 0.5:
+        def kernel(X1, X2):
+            # normalize input to [0,2pi]
+            X1 = np.asarray(X1) % (2*np.pi)
+            X2 = np.asarray(X2) % (2*np.pi)
+            # evaluate closed-form kernel
+            R = _compute_distances(X1, X2, l)
+            u = R - np.pi/l
+            return np.cosh(u)
+        c = kernel([[0]], [[0]]) # normalization constant
+        return lambda X1, X2: sigma**2/c * kernel(X1, X2)
+    elif nu == 1.5:
+        def kernel(X1, X2):
+            # normalize input to [0,2pi]
+            X1 = np.asarray(X1) % (2*np.pi)
+            X2 = np.asarray(X2) % (2*np.pi)
+            # evaluate closed-form kernel
+            R = _compute_distances(X1, X2, l)
+            u = np.sqrt(3) * (R - np.pi/l)
+            a0 = np.pi*l/6 * (l/np.pi + np.sqrt(3)/np.tanh(np.sqrt(3)*np.pi/l))
+            a1 = -l**2/6
+            return a0 * np.cosh(u) + a1 * u*np.sinh(u)
+        c = kernel([[0]], [[0]]) # normalization constant
+        return lambda X1, X2: sigma**2/c * kernel(X1, X2)
+    elif nu == 2.5:
+        def kernel(X1, X2):
+            # normalize input to [0,2pi]
+            X1 = np.asarray(X1) % (2*np.pi)
+            X2 = np.asarray(X2) % (2*np.pi)
+            # evaluate closed-form kernel
+            R = _compute_distances(X1, X2, l)
+            u = np.sqrt(5) * (R - np.pi/l)
+            a0 = -(np.pi*l)**2/200 * (-5 + 3*(l/np.pi)**2 + 3*np.sqrt(5)*(l/np.pi)/np.tanh(np.sqrt(5)*np.pi/l) + 10/np.tanh(np.sqrt(5)*np.pi/l)**2)
+            a1 = np.pi*l**3/100 * (3/2*l/np.pi + np.sqrt(5)/np.tanh(np.sqrt(5)*np.pi/l))
+            a2 = -l**4/200
+            return a0 * np.cosh(u) + a1 * u*np.sinh(u) + a2 * u**2*np.cosh(u)
+        c = kernel([[0]], [[0]]) # normalization constant
+        return lambda X1, X2: sigma**2/c * kernel(X1, X2)
+    elif nu % 1 == 0.5:
+        # TODO
+        print("WARNING: not implemented to evaluate periodic Matérn kernel with nu={}".format(nu))
+    else:
+        print("WARNING: no closed-form expression for periodic Matérn kernel with nu={} known".format(nu))
+
+
+def build_kernel_matern_periodic_approx(sigma=1, l=1, nu=1.5, n_approx=1):
     k = Matern(length_scale=l, nu=nu)
-    def kernel(x1, x2):
-        ks = [k(x1 + i * 2*np.pi, x2) for i in range(-n_approx, n_approx+1)]
+    def kernel(X1, X2):
+        ks = [k(X1 + i * 2*np.pi, X2) for i in range(-n_approx, n_approx+1)]
         return sigma**2 * np.sum(ks, axis=0)
     return kernel
+
+
+def build_kernel_matern_periodic_truncated(sigma=1, l=1, nu=1.5, c1=np.pi, c2=2*np.pi, n=None):
+    if n is None:
+        n = int(np.ceil(c2 / (2 * np.pi)))
+    k = Matern(length_scale=l, nu=nu)
+    # define truncated kernel
+    t = _build_transition_function(c1, c2)
+    def k_trunc(X1, X2):
+        R = _compute_distances(X1, X2, l)
+        return t(R) * k(X1, X2)
+    # define periodic kernel
+    def kernel(X1, X2):
+        ks = [k_trunc(X1 + i * 2*np.pi, X2) for i in range(-n, n+1)]
+        return sigma**2 * np.sum(ks, axis=0)
+    return kernel
+
+
+def build_kernel_matern_periodic_warped(sigma=1, l=1, nu=1.5):
+    k = Matern(length_scale=l, nu=nu)
+    # define warping function
+    u = lambda x: np.concatenate([np.cos(x), np.sin(x)], axis=-1)
+    # define periodic function
+    def kernel(X1, X2):
+        if np.shape(X1)[1] > 1 or np.shape(X2)[1] > 1:
+            print("WARNING: Matérn kernel periodized by warping might not work for non-scalar samples!") # TODO check?
+        return sigma**2 * k(u(X1), u(X2))
+    return kernel
+
+
+# HELPER FUNCTIONS
+
+def _compute_distances(X1, X2, l):
+    """Compute matrix with pairwise distances between X1 and X2.
+    
+    Args:
+        X1: ndarray of shape (n_samples, n_features)
+        X2: ndarray of shape (n_samples, n_features)
+        l: length scale of the kernel
+    """
+    # reference: sklearn.gaussian_process.kernels.py::Matern.__call__
+    X1 = np.atleast_2d(X1)
+    l = _check_length_scale(X1, l)
+    R = cdist(X1 / l, X2 / l, metric="euclidean")
+    return R
+
+
+def _build_transition_function(c1, c2):
+    """Build function smoothly transitioning from 1 to 0 between [c1, c2]
+    
+    Args:
+        R: (n_samples_X, n_samples_Y) matrix with pairwise distances between X and Y
+    """
+    dc = c2 - c1
+    omega = lambda x: np.where(x > 0, np.exp(-np.divide(1, x, where=x > 1e-6)), 0)
+    t = lambda x: omega((c2 - np.abs(x)) / dc) / (omega((c2 - np.abs(x)) / dc) + omega((np.abs(x) - c1) / dc))
+    return t
