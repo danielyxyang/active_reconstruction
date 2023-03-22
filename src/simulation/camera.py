@@ -147,10 +147,10 @@ class Camera():
         alpha = self.theta + beta
         # check for numerical stability of tan and cot
         if (alpha + np.pi/4) % np.pi < np.pi / 2: # use y = mx + b
-            m = np.tan(alpha)
+            m = np.sin(alpha) / np.cos(alpha) # tan
             b = y - m*x
             return lambda phi: b / (np.sin(phi) - m * np.cos(phi))
         else: # use x = my + b
-            m = np.cot(alpha)
+            m = np.cos(alpha) / np.sin(alpha) # cot (does not exist in numpy)
             b = x - m*y
             return lambda phi: b / (np.cos(phi) - m * np.sin(phi))
