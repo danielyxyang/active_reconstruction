@@ -36,9 +36,6 @@ class Plotter():
 
         self.create_plot(**kwargs)
     
-    def __del__(self):
-        if self.fig is not None:
-            plt.close(self.fig)
 
     # HELPER METHODS
 
