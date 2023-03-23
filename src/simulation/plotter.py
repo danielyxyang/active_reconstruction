@@ -37,67 +37,6 @@ class Plotter():
         self.create_plot(**kwargs)
     
 
-    # HELPER METHODS
-
-    def static(self, key, plt_f, visible=True):
-        # display artist
-        if key not in self.artists.keys():
-            self.artists[key] = plt_f()
-        # set visibility of artist
-        self.set_visible(self.artists[key], visible)
-
-    def dynamic(self, key, plt_f, update_f, visible=True):
-        # display or update artist
-        if key not in self.artists.keys():
-            self.artists[key] = plt_f()
-        else:
-            update_f(self.artists[key])
-        # set visibility of artist
-        self.set_visible(self.artists[key], visible)
-    
-    def dynamic_plot(self, key, *args, visible=True, **kwargs):
-        self.dynamic(
-            key,
-            lambda: self.axis.plot(*args, **kwargs),
-            lambda lines: [line.set_data(*args[2*i:2*i+2]) for i, line in enumerate(lines)],
-            visible=visible,
-        )
-    
-    def dynamic_patch_collection(self, key, patches, visible=True, **kwargs):
-        self.dynamic(
-            key,
-            lambda: self.axis.add_collection(PatchCollection(patches, **kwargs)),
-            lambda collection: collection.set_paths(patches),
-            visible=visible,
-        )
-
-    def set_visible(self, item, visible):
-        if isinstance(item, plt.Artist):
-            item.set_visible(visible)
-        elif isinstance(item, list):
-            for subitem in item:
-                subitem.set_visible(visible)
-        else:
-            print("WARNING: not able to change visibility of {}".format(item))
-
-    def args_scatter(self, size):
-        return dict(linestyle="none", marker="o", markersize=size)
-
-    def args_to_edgecolor(self, kwargs):
-        kwargs.update(dict(facecolor="none", edgecolor=kwargs["color"]))
-        kwargs.pop("color")
-        return kwargs
-    
-    def args_to_facecolor(self, kwargs):
-        kwargs.update(dict(facecolor=kwargs["color"], edgecolor="none"))
-        kwargs.pop("color")
-        return kwargs
-
-    def highlight_pixels(self, surface_points):
-        pixels = polar_to_pixel(surface_points[0], surface_points[1])
-        return [Rectangle((GRID_H * (px-0.5), GRID_H * (py-0.5)), GRID_H, GRID_H) for px, py in pixels.T]
-
-
     # PUBLIC METHODS
 
     def create_plot(self, figsize=None, title=None, xlabel=None, ylabel=None, rlim=None):
@@ -191,6 +130,70 @@ class Plotter():
             yield self
         finally:
             self.axis = self.__axes_context.pop()
+   
+
+    # HELPER METHODS
+
+    def static(self, key, plt_f, visible=True):
+        # display artist
+        if key not in self.artists.keys():
+            self.artists[key] = plt_f()
+        # set visibility of artist
+        self.set_visible(self.artists[key], visible)
+
+    def dynamic(self, key, plt_f, update_f, visible=True):
+        # display or update artist
+        if key not in self.artists.keys():
+            self.artists[key] = plt_f()
+        else:
+            update_f(self.artists[key])
+        # set visibility of artist
+        self.set_visible(self.artists[key], visible)
+    
+    def dynamic_plot(self, key, *args, visible=True, **kwargs):
+        self.dynamic(
+            key,
+            lambda: self.axis.plot(*args, **kwargs),
+            lambda lines: [line.set_data(*args[2*i:2*i+2]) for i, line in enumerate(lines)],
+            visible=visible,
+        )
+    
+    def dynamic_patch_collection(self, key, patches, visible=True, **kwargs):
+        self.dynamic(
+            key,
+            lambda: self.axis.add_collection(PatchCollection(patches, **kwargs)),
+            lambda collection: collection.set_paths(patches),
+            visible=visible,
+        )
+
+    def set_visible(self, item, visible):
+        if isinstance(item, plt.Artist):
+            item.set_visible(visible)
+        elif isinstance(item, list):
+            for subitem in item:
+                subitem.set_visible(visible)
+        else:
+            print("WARNING: not able to change visibility of {}".format(item))
+
+    def args_scatter(self, size):
+        return dict(linestyle="none", marker="o", markersize=size)
+
+    def args_to_edgecolor(self, kwargs):
+        kwargs.update(dict(facecolor="none", edgecolor=kwargs["color"]))
+        kwargs.pop("color")
+        return kwargs
+    
+    def args_to_facecolor(self, kwargs):
+        kwargs.update(dict(facecolor=kwargs["color"], edgecolor="none"))
+        kwargs.pop("color")
+        return kwargs
+
+    def highlight_pixels(self, surface_points):
+        pixels = polar_to_pixel(surface_points[0], surface_points[1])
+        return [Rectangle((GRID_H * (px-0.5), GRID_H * (py-0.5)), GRID_H, GRID_H) for px, py in pixels.T]
+ 
+    
+    # PLOTTING METHODS
 
     def plot_grid(self, show_grid=True):
         color = self.colors["grid"]
