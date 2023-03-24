@@ -196,8 +196,8 @@ class Plotter():
             self.fig.canvas.toolbar_visible = False
             self.fig.canvas.footer_visible = False
 
-    def args_scatter(self, size):
-        return dict(linestyle="none", marker="o", markersize=size)
+    def args_scatter(self, size, marker="o"):
+        return dict(linestyle="none", marker=marker, markersize=size)
 
     def args_to_edgecolor(self, kwargs):
         kwargs.update(dict(facecolor="none", edgecolor=kwargs["color"]))
@@ -372,7 +372,7 @@ class Plotter():
         elif self.mode == "polar":
             self.static(key, lambda: self.axis.axhline(params.CAM_D, **kwargs), visible=show_view_circle)
 
-    def plot_object(self, obj, show_object=True, show_points=False, show_pixels=False, show_bounds=True, n=200, name=None):
+    def plot_object(self, obj, show_object=True, show_points=False, show_pixels=False, show_bounds=True, show_center=True, n=200, name=None):
         color = self.colors["object"]
 
         # plot object surface
@@ -402,6 +402,12 @@ class Plotter():
             self.dynamic_patch_collection(key, patches, **self.args_to_facecolor(kwargs), visible=show_pixels)
         elif self.mode == "polar":
             if show_pixels: print("WARNING: not supported to plot pixels in polar plot")
+
+        # plot object center
+        key = "plot_object:{}:center".format(name)
+        kwargs = dict(**self.args_scatter(4, marker="x"), color=color, alpha=0.5)
+        if self.mode == "world":
+            self.dynamic_plot(key, 0, 0, **kwargs, visible=show_center)
 
         # plot object bounds
         key = "plot_object:{}:bounds".format(name)
