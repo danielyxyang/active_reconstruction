@@ -1,6 +1,6 @@
 import numpy as np
 
-from parameters import OBJ_D_MAX, CAM_FOV_RAD, CAM_DOF, CAM_D, GRID_H
+import parameters as params
 from simulation.camera import Camera
 from utils.math import (
     cartesian_to_polar,
@@ -43,9 +43,9 @@ class Objective():
     @staticmethod
     def get_candidate_pixels(xlim=None, ylim = None):
         if xlim is None:
-            xlim = (-OBJ_D_MAX, OBJ_D_MAX)
+            xlim = (-params.OBJ_D_MAX, params.OBJ_D_MAX)
         if ylim is None:
-            ylim = (-OBJ_D_MAX, OBJ_D_MAX)
+            ylim = (-params.OBJ_D_MAX, params.OBJ_D_MAX)
         # TODO GP can also be outside of OBJ_D_MAX!
         bbox_min = cartesian_to_pixel(xlim[0], ylim[0])
         bbox_max = cartesian_to_pixel(xlim[1], ylim[1])
@@ -72,15 +72,15 @@ class Objective():
                 (lower[0] + 2*np.pi, lower[1]),
             ], axis=1)
         # find intersection to the left (i.e. smaller polar angle)
-        fov_boundary = camera.ray_f(CAM_FOV_RAD/2)(lower[0])
-        fov_limit = camera.camera_to_polar(CAM_FOV_RAD/2, CAM_DOF)
+        fov_boundary = camera.ray_f(params.CAM_FOV_RAD/2)(lower[0])
+        fov_limit = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
         intersections = intersect_functions(fov_boundary, lower[1], mode="left")
         c1 = np.concatenate([lower[:, intersections].T, [fov_limit]]).T
         c1 = c1[:, is_in_range(c1[0], (fov_limit[0], camera.theta), mod=2*np.pi)]
         c1 = c1[:, np.argmin(camera.polar_to_camera(*c1)[1])]
         # find intersection to the right
-        fov_boundary = camera.ray_f(-CAM_FOV_RAD/2)(lower[0])
-        fov_limit = camera.camera_to_polar(-CAM_FOV_RAD/2, CAM_DOF)
+        fov_boundary = camera.ray_f(-params.CAM_FOV_RAD/2)(lower[0])
+        fov_limit = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
         intersections = intersect_functions(fov_boundary, lower[1], mode="right")
         c2 = np.concatenate([lower[:, intersections].T, [fov_limit]]).T
         c2 = c2[:, is_in_range(c2[0], (camera.theta, fov_limit[0]), mod=2*np.pi)]
@@ -157,15 +157,15 @@ class SimpleIntersectionObjective(Objective):
         mask1 = is_in_range(phi, (c1[0], camera.theta), mod=2*np.pi)
         mask2 = is_in_range(phi, (camera.theta, c2[0]), mod=2*np.pi)
         fov = np.zeros_like(phi)
-        fov[mask1] = camera.ray_f(CAM_FOV_RAD/2)(phi[mask1])
-        fov[mask2] = camera.ray_f(-CAM_FOV_RAD/2)(phi[mask2])
+        fov[mask1] = camera.ray_f(params.CAM_FOV_RAD/2)(phi[mask1])
+        fov[mask2] = camera.ray_f(-params.CAM_FOV_RAD/2)(phi[mask2])
         # compute number of pixels
-        estimate = np.sum(np.maximum(np.minimum(upper[1], fov) ** 2 - lower[1] ** 2, 0) / 2 * delta_phi) / (GRID_H ** 2)
+        estimate = np.sum(np.maximum(np.minimum(upper[1], fov) ** 2 - lower[1] ** 2, 0) / 2 * delta_phi) / (params.GRID_H ** 2)
         return estimate
     
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(CAM_FOV_RAD/2, CAM_DOF)
-        c2 = camera.camera_to_polar(-CAM_FOV_RAD/2, CAM_DOF)
+        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
+        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
         return c1, c2
 
 
@@ -200,7 +200,7 @@ class ConfidenceObjective(Objective):
         lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
         upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
         # compute number of pixels
-        estimate = np.sum((upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (GRID_H ** 2)
+        estimate = np.sum((upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (params.GRID_H ** 2)
         return estimate
 
     def get_boundary(self, camera, data):
@@ -238,12 +238,12 @@ class SimpleConfidenceObjective(Objective):
         lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
         upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
         # compute number of pixels
-        estimate = np.sum((upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (GRID_H ** 2)
+        estimate = np.sum((upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (params.GRID_H ** 2)
         return estimate
 
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(CAM_FOV_RAD/2, CAM_DOF)
-        c2 = camera.camera_to_polar(-CAM_FOV_RAD/2, CAM_DOF)
+        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
+        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
         return c1, c2
 
 
@@ -277,12 +277,12 @@ class PolarSimpleConfidenceObjective(Objective):
         lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
         upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
         # compute number of polar pixels
-        estimate = np.sum((upper[1] - lower[1]) * delta_phi) / (GRID_H ** 2)
+        estimate = np.sum((upper[1] - lower[1]) * delta_phi) / (params.GRID_H ** 2)
         return estimate
 
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(CAM_FOV_RAD/2, CAM_DOF)
-        c2 = camera.camera_to_polar(-CAM_FOV_RAD/2, CAM_DOF)
+        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
+        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
         return c1, c2
 
 
@@ -305,15 +305,15 @@ class WeightedSimpleConfidenceObjective(Objective):
         mask1 = is_in_range(phi, (c1[0], camera.theta), mod=2*np.pi)
         mask2 = is_in_range(phi, (camera.theta, c2[0]), mod=2*np.pi)
         fov = np.zeros_like(phi)
-        fov[mask1] = camera.ray_f(CAM_FOV_RAD/2)(phi[mask1])
-        fov[mask2] = camera.ray_f(-CAM_FOV_RAD/2)(phi[mask2])
+        fov[mask1] = camera.ray_f(params.CAM_FOV_RAD/2)(phi[mask1])
+        fov[mask2] = camera.ray_f(-params.CAM_FOV_RAD/2)(phi[mask2])
         # compute weighted number of pixels
-        estimate = np.sum((fov / CAM_D) * (upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (GRID_H ** 2)
+        estimate = np.sum((fov / params.CAM_D) * (upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (params.GRID_H ** 2)
         return estimate
     
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(CAM_FOV_RAD/2, CAM_DOF)
-        c2 = camera.camera_to_polar(-CAM_FOV_RAD/2, CAM_DOF)
+        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
+        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
         return c1, c2
 
 
@@ -335,15 +335,15 @@ class WeightedSimpleConfidenceObjective(Objective):
 #         mask1 = is_in_range(phi, (c1[0], camera.theta), mod=2*np.pi)
 #         mask2 = is_in_range(phi, (camera.theta, c2[0]), mod=2*np.pi)
 #         fov = np.zeros_like(phi)
-#         fov[mask1] = camera.ray_f(CAM_FOV_RAD/2)(phi[mask1])
-#         fov[mask2] = camera.ray_f(-CAM_FOV_RAD/2)(phi[mask2])
+#         fov[mask1] = camera.ray_f(params.CAM_FOV_RAD/2)(phi[mask1])
+#         fov[mask2] = camera.ray_f(-params.CAM_FOV_RAD/2)(phi[mask2])
 #         # compute weighted number of pixels
-#         estimate = np.sum((fov / CAM_D) * (upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (GRID_H ** 2)
+#         estimate = np.sum((fov / params.CAM_D) * (upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (params.GRID_H ** 2)
 #         return estimate
 
 #     def get_boundary(self, camera, data):
-#         c1 = camera.camera_to_polar(CAM_FOV_RAD/2, CAM_DOF)
-#         c2 = camera.camera_to_polar(-CAM_FOV_RAD/2, CAM_DOF)
+#         c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
+#         c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
 #         return c1, c2
 
 

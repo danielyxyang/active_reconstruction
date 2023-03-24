@@ -1,6 +1,6 @@
 import numpy as np
 
-from parameters import GRID_H
+import parameters as params
 
 
 # MATH FUNCTIONS
@@ -27,14 +27,14 @@ def cartesian_to_pixel(x, y):
     mapped to the incident pixel to the left or right with even 
     x-coordinate and the horizontal grid edges are mapped to the incident
     pixel above or below with even y-coordinate."""
-    px = np.around(x / GRID_H)
-    py = np.around(y / GRID_H)
+    px = np.around(x / params.GRID_H)
+    py = np.around(y / params.GRID_H)
     return np.array([px, py], dtype=int)
 
 
 def pixel_to_cartesian(px, py):
     """Convert pixel coordinates of world grid to cartesian coordinates of pixel center."""
-    return np.array([px, py]) * GRID_H
+    return np.array([px, py]) * params.GRID_H
 
 
 def polar_to_pixel(phi, r):

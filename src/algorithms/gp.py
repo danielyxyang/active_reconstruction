@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.gaussian_process.kernels import RBF, ExpSineSquared, Matern, _check_length_scale
 
-from parameters import OBJ_D_AVG
+import parameters as params
 from utils.math import polar_to_cartesian, polar_to_pixel
 from utils.tools import Profiler
 
@@ -123,7 +123,7 @@ class GaussianProcess():
     
 
 def build_mean():
-    return lambda phi: np.full_like(phi, fill_value=OBJ_D_AVG, dtype=float)
+    return lambda phi: np.full_like(phi, fill_value=params.OBJ_D_AVG, dtype=float)
 
 
 def build_kernel_rbf(sigma=1, l=1):

@@ -3,7 +3,7 @@ import ipywidgets as widgets
 from IPython.display import display, clear_output
 from traitlets import Any
 
-from parameters import GRID_H, OBJ_D_MIN, OBJ_D_MAX
+import parameters as params
 from algorithms.gp import (
     build_kernel_rbf,
     build_kernel_periodic,
@@ -32,16 +32,16 @@ class ObjectSelector(widgets.VBox, widgets.widget_description.DescriptionWidget,
         options = [
             (EllipseObject.name, widgets.interactive(
                 EllipseObject.build,
-                a=widgets.FloatSlider(value=6, min=OBJ_D_MIN, max=OBJ_D_MAX, step=0.1),
-                b=widgets.FloatSlider(value=6, min=OBJ_D_MIN, max=OBJ_D_MAX, step=0.1),
+                a=widgets.FloatSlider(value=6, min=params.OBJ_D_MIN, max=params.OBJ_D_MAX, step=0.1),
+                b=widgets.FloatSlider(value=6, min=params.OBJ_D_MIN, max=params.OBJ_D_MAX, step=0.1),
             )),
             (SquareObject.name, widgets.interactive(
                 SquareObject.build,
-                width=widgets.FloatSlider(value=8, min=2*OBJ_D_MIN, max=2*OBJ_D_MAX/np.sqrt(2), step=0.1),
+                width=widgets.FloatSlider(value=8, min=2*params.OBJ_D_MIN, max=2*params.OBJ_D_MAX/np.sqrt(2), step=0.1),
             )),
             (FlowerObject.name, widgets.interactive(
                 FlowerObject.build,
-                amplitude=widgets.FloatSlider(value=2, min=0, max=(OBJ_D_MAX - OBJ_D_MIN) / 2, step=0.1),
+                amplitude=widgets.FloatSlider(value=2, min=0, max=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 2, step=0.1),
                 frequency=widgets.IntSlider(value=5, min=0, max=15),
             )),
             *[(str(obj), obj) for obj in PolygonObject.build_polygons()]
@@ -90,38 +90,38 @@ class KernelSelector(widgets.VBox, widgets.widget_description.DescriptionWidget,
         options = [
             ("rbf", widgets.interactive(
                 build_kernel_rbf,
-                sigma=widgets.FloatSlider(value=(OBJ_D_MAX - OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
-                l=widgets.FloatSlider(value=GRID_H, min=GRID_H / OBJ_D_MAX, max=2, step=GRID_H / OBJ_D_MAX),
+                sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
+                l=widgets.FloatSlider(value=params.GRID_H, min=params.GRID_H / params.OBJ_D_MAX, max=2, step=params.GRID_H / params.OBJ_D_MAX),
             )),
             ("periodic", widgets.interactive(
                 build_kernel_periodic,
-                sigma=widgets.FloatSlider(value=(OBJ_D_MAX - OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
-                l=widgets.FloatSlider(value=GRID_H, min=GRID_H / OBJ_D_MAX, max=2, step=GRID_H / OBJ_D_MAX),
+                sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
+                l=widgets.FloatSlider(value=params.GRID_H, min=params.GRID_H / params.OBJ_D_MAX, max=2, step=params.GRID_H / params.OBJ_D_MAX),
             )),
             ("matern", widgets.interactive(
                 build_kernel_matern,
-                sigma=widgets.FloatSlider(value=(OBJ_D_MAX - OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
-                l=widgets.FloatSlider(value=GRID_H, min=GRID_H / OBJ_D_MAX, max=2, step=GRID_H / OBJ_D_MAX),
+                sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
+                l=widgets.FloatSlider(value=params.GRID_H, min=params.GRID_H / params.OBJ_D_MAX, max=2, step=params.GRID_H / params.OBJ_D_MAX),
                 nu=widgets.FloatSlider(value=1.5, min=0.5, max=5, step=0.1),
             )),
             ("matern_periodic", widgets.interactive(
                 build_kernel_matern_periodic,
-                sigma=widgets.FloatSlider(value=(OBJ_D_MAX - OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
-                l=widgets.FloatSlider(value=GRID_H, min=GRID_H / OBJ_D_MAX, max=2, step=GRID_H / OBJ_D_MAX),
+                sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
+                l=widgets.FloatSlider(value=params.GRID_H, min=params.GRID_H / params.OBJ_D_MAX, max=2, step=params.GRID_H / params.OBJ_D_MAX),
                 nu=widgets.Dropdown(options=[0.5, 1.5, 2.5], index=1),
                 n_approx=widgets.IntSlider(value=1, min=0, max=10),
             )),
             ("matern_periodic_approx", widgets.interactive(
                 build_kernel_matern_periodic_approx,
-                sigma=widgets.FloatSlider(value=(OBJ_D_MAX - OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
-                l=widgets.FloatSlider(value=GRID_H, min=GRID_H / OBJ_D_MAX, max=2, step=GRID_H / OBJ_D_MAX),
+                sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
+                l=widgets.FloatSlider(value=params.GRID_H, min=params.GRID_H / params.OBJ_D_MAX, max=2, step=params.GRID_H / params.OBJ_D_MAX),
                 nu=widgets.FloatSlider(value=1.5, min=0.5, max=5, step=0.1),
                 n_approx=widgets.IntSlider(value=1, min=0, max=10),
             )),
             ("matern_periodic_truncated", widgets.interactive(
                 build_kernel_matern_periodic_truncated,
-                sigma=widgets.FloatSlider(value=(OBJ_D_MAX - OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
-                l=widgets.FloatSlider(value=GRID_H, min=GRID_H / OBJ_D_MAX, max=2, step=GRID_H / OBJ_D_MAX),
+                sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
+                l=widgets.FloatSlider(value=params.GRID_H, min=params.GRID_H / params.OBJ_D_MAX, max=2, step=params.GRID_H / params.OBJ_D_MAX),
                 nu=widgets.FloatSlider(value=1.5, min=0.5, max=5, step=0.1),
                 c1=widgets.FloatSlider(value=np.pi, min=0, max=2*np.pi),
                 c2=widgets.FloatSlider(value=2*np.pi, min=2*np.pi, max=4*np.pi, step=np.pi/4),
@@ -129,8 +129,8 @@ class KernelSelector(widgets.VBox, widgets.widget_description.DescriptionWidget,
             )),
             ("matern_periodic_warped", widgets.interactive(
                 build_kernel_matern_periodic_warped,
-                sigma=widgets.FloatSlider(value=(OBJ_D_MAX - OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
-                l=widgets.FloatSlider(value=GRID_H, min=GRID_H / OBJ_D_MAX, max=2, step=GRID_H / OBJ_D_MAX),
+                sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
+                l=widgets.FloatSlider(value=params.GRID_H, min=params.GRID_H / params.OBJ_D_MAX, max=2, step=params.GRID_H / params.OBJ_D_MAX),
                 nu=widgets.FloatSlider(value=1.5, min=0.5, max=5, step=0.1),
             )),
         ]

@@ -1,6 +1,6 @@
 import numpy as np
 
-from parameters import GRID_H, OBJ_D_MIN, OBJ_D_MAX, OBJ_D_AVG
+import parameters as params
 from utils.math import polar_to_cartesian, polar_to_pixel
 from utils.tools import Profiler, LoopChecker
 
@@ -85,11 +85,11 @@ class Object():
                 surface_phis.append(phi)
                 
                 # compute phi of surface point (approximately) centered in next pixel
-                phi_next1, n_iter1 = self.__find_phi(phi, d_phi=GRID_H, target_mode="4-neighbors")
+                phi_next1, n_iter1 = self.__find_phi(phi, d_phi=params.GRID_H, target_mode="4-neighbors")
                 if phi_next1 is None:
                     print("WARNING: failed to find left phi for discretization of object")
                     break
-                phi_next2, n_iter2 = self.__find_phi(phi_next1, d_phi=GRID_H, target_mode="this")
+                phi_next2, n_iter2 = self.__find_phi(phi_next1, d_phi=params.GRID_H, target_mode="this")
                 if phi_next2 is None:
                     print("WARNING: failed to find right phi for discretization of object")
                     break
@@ -137,7 +137,7 @@ class Object():
         phi_found = None
         n_iter = 0
         # iterate as long as no phi has been found or is not exact enough (but at most max_iter times)
-        while (phi_found is None or np.linalg.norm(self.cc(phi_right) - self.cc(phi_left)) > GRID_H * alpha) and n_iter < max_iter:
+        while (phi_found is None or np.linalg.norm(self.cc(phi_right) - self.cc(phi_left)) > params.GRID_H * alpha) and n_iter < max_iter:
             phi_middle = (phi_left + phi_right) / 2
             pixel_middle = tuple(self.pc(phi_middle))
             
@@ -208,10 +208,10 @@ class EllipseObject(Object):
             a: semi-major axis aligned with x-axis (defaults to average of object bounds)
             b: semi-minor axis aligned with y-axis (defaults to average of object bounds)
         """
-        a = OBJ_D_AVG if a is None else a
-        a = np.clip(a, OBJ_D_MIN, OBJ_D_MAX)
-        b = OBJ_D_AVG if b is None else b
-        b = np.clip(b, OBJ_D_MIN, OBJ_D_MAX)
+        a = params.OBJ_D_AVG if a is None else a
+        a = np.clip(a, params.OBJ_D_MIN, params.OBJ_D_MAX)
+        b = params.OBJ_D_AVG if b is None else b
+        b = np.clip(b, params.OBJ_D_MIN, params.OBJ_D_MAX)
         args = dict(a=a, b=b)
         def obj_f(phi):
             return a * b / np.sqrt((b * np.cos(phi)) ** 2 + (a * np.sin(phi)) ** 2)
@@ -227,8 +227,8 @@ class SquareObject(Object):
         Args:
             width: width (defaults to twice the average of object bounds)
         """
-        width = 2*OBJ_D_AVG if width is None else width
-        width = np.clip(width, 2 * OBJ_D_MIN, 2 * OBJ_D_MAX / np.sqrt(2))
+        width = 2*params.OBJ_D_AVG if width is None else width
+        width = np.clip(width, 2 * params.OBJ_D_MIN, 2 * params.OBJ_D_MAX / np.sqrt(2))
         args = dict(width=width)
         def obj_f(phi):
             phi = (phi - np.pi/4) % (np.pi/2) + np.pi/4 # map phi to [1/4*pi, 3/4*pi)
@@ -246,12 +246,12 @@ class FlowerObject(Object):
             amplitude: amplitude (defaults to halfway between object bounds)
             frequency: integer-valued frequency
         """
-        amplitude = (OBJ_D_MAX - OBJ_D_MIN) / 2 if amplitude is None else amplitude
-        amplitude = np.clip(amplitude, 0, (OBJ_D_MAX - OBJ_D_MIN) / 2)
+        amplitude = (params.OBJ_D_MAX - params.OBJ_D_MIN) / 2 if amplitude is None else amplitude
+        amplitude = np.clip(amplitude, 0, (params.OBJ_D_MAX - params.OBJ_D_MIN) / 2)
         frequency = int(frequency)
         args=dict(frequency=frequency, amplitude=amplitude)
         def obj_f(phi):
-            return amplitude * np.cos(frequency * phi) + OBJ_D_AVG
+            return amplitude * np.cos(frequency * phi) + params.OBJ_D_AVG
         super().__init__(obj_f, args=args, **kwargs)
 
 

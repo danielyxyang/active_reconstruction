@@ -1,6 +1,6 @@
 import numpy as np
 
-from parameters import CAM_D, CAM_FOV_RAD, CAM_DOF
+import parameters as params
 from utils.math import polar_to_cartesian
 from utils.tools import LoopChecker
 
@@ -23,11 +23,11 @@ class Camera():
         the line of sight of the camera."""
         A = np.sin(phi - self.theta) * r
         B = np.cos(phi - self.theta) * r
-        beta = -np.arctan2(A, CAM_D - B)
-        d = np.sqrt(A ** 2 + (CAM_D - B) ** 2)
+        beta = -np.arctan2(A, params.CAM_D - B)
+        d = np.sqrt(A ** 2 + (params.CAM_D - B) ** 2)
         # TODO draft
         # los = self.theta + np.pi
-        # x, y = (polar_to_cartesian(phi, r).T - polar_to_cartesian(self.theta, CAM_D)).T
+        # x, y = (polar_to_cartesian(phi, r).T - polar_to_cartesian(self.theta, params.CAM_D)).T
         # beta, d = cartesian_to_polar(x, y) - np.array([los, 0])
         return np.array([beta, d])
     
@@ -37,12 +37,12 @@ class Camera():
         The zero polar angle in the camera coordinate system is aligned with
         the line of sight of the camera."""
         A = np.sin(-beta) * d
-        B = CAM_D - np.cos(-beta) * d
+        B = params.CAM_D - np.cos(-beta) * d
         phi = np.arctan2(A, B) + self.theta
         r = np.sqrt(A ** 2 + B ** 2)
         # TODO draft
         # los = self.theta + np.pi
-        # x, y = (polar_to_cartesian(beta + los, d).T + polar_to_cartesian(self.theta, CAM_D)).T
+        # x, y = (polar_to_cartesian(beta + los, d).T + polar_to_cartesian(self.theta, params.CAM_D)).T
         # phi, r = cartesian_to_polar(x, y)
         return np.array([phi, r])
 
@@ -113,7 +113,7 @@ class Camera():
             list: N-dimensional boolean array
         """
         beta, d = self.polar_to_camera(*points)
-        return np.logical_and(np.abs(beta) <= CAM_FOV_RAD/2, d <= CAM_DOF if check_dof else True)
+        return np.logical_and(np.abs(beta) <= params.CAM_FOV_RAD/2, d <= params.CAM_DOF if check_dof else True)
     
     def is_not_occluded(self, points, object):
         """Check whether the points are not occluded by the object points.
@@ -143,7 +143,7 @@ class Camera():
     
     def ray_f(self, beta):
         """Return function describing casted ray in polar coordinates."""
-        x, y = polar_to_cartesian(self.theta, CAM_D)
+        x, y = polar_to_cartesian(self.theta, params.CAM_D)
         alpha = self.theta + beta
         # check for numerical stability of tan and cot
         if (alpha + np.pi/4) % np.pi < np.pi / 2: # use y = mx + b
