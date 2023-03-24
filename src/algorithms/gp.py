@@ -3,8 +3,8 @@ from scipy.spatial.distance import cdist
 from sklearn.gaussian_process.kernels import RBF, ExpSineSquared, Matern, _check_length_scale
 
 from parameters import OBJ_D_AVG
-from utils.helpers import polar_to_cartesian, polar_to_pixel
-from utils.profiler import Profiler
+from utils.math import polar_to_cartesian, polar_to_pixel
+from utils.tools import Profiler
 
 
 class GaussianProcess():

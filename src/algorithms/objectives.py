@@ -2,7 +2,7 @@ import numpy as np
 
 from parameters import OBJ_D_MAX, CAM_FOV_RAD, CAM_DOF, CAM_D, GRID_H
 from simulation.camera import Camera
-from utils.helpers import (
+from utils.math import (
     cartesian_to_polar,
     cartesian_to_pixel,
     pixel_to_cartesian,

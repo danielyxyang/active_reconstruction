@@ -1,8 +1,8 @@
 import numpy as np
 
 from parameters import CAM_D, CAM_FOV_RAD, CAM_DOF
-from utils.helpers import polar_to_cartesian
-from utils.loop_checker import LoopChecker
+from utils.math import polar_to_cartesian
+from utils.tools import LoopChecker
 
 
 class Camera():

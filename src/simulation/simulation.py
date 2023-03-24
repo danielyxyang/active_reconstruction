@@ -4,7 +4,7 @@ from parameters import GRID_H
 from algorithms.algorithms import GreedyAlgorithm
 from algorithms.objectives import SurfaceMarginalObjective
 from simulation.camera import Camera
-from utils.helpers import setdiff2d
+from utils.math import setdiff2d
 
 
 class Simulation():

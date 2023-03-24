@@ -7,7 +7,7 @@ from matplotlib.patches import Circle, Rectangle, Wedge, Polygon
 from IPython.display import display
 
 from parameters import GRID_H, OBJ_D_MIN, OBJ_D_MAX, CAM_D, CAM_FOV_RAD, CAM_DOF
-from utils.helpers import polar_to_cartesian, cartesian_to_polar, polar_to_pixel
+from utils.math import polar_to_cartesian, cartesian_to_polar, polar_to_pixel
 from utils.plotting import MultipleTicks
 
 

@@ -1,9 +1,8 @@
 import numpy as np
 
 from parameters import GRID_H, OBJ_D_MIN, OBJ_D_MAX, OBJ_D_AVG
-from utils.helpers import polar_to_cartesian, polar_to_pixel
-from utils.profiler import Profiler
-from utils.loop_checker import LoopChecker
+from utils.math import polar_to_cartesian, polar_to_pixel
+from utils.tools import Profiler, LoopChecker
 
 
 class Object():

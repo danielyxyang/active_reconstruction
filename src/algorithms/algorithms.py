@@ -13,7 +13,7 @@ from algorithms.objectives import (
     PolarUncertaintyObjective,
 )
 from simulation.camera import Camera
-from utils.helpers import is_in_range
+from utils.math import is_in_range
 
 
 class Algorithm():
