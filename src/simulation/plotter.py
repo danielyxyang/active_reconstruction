@@ -39,7 +39,7 @@ class Plotter():
 
     # PUBLIC METHODS
 
-    def create_plot(self, figsize=None, title=None, xlabel=None, ylabel=None, rlim=None):
+    def create_plot(self, figsize=None, title=None, xlabel=None, ylabel=None, rlim=None, undecorated=False):
         if rlim is None:
             rlim = CAM_D * 1.1
         if np.isscalar(figsize):
@@ -84,6 +84,10 @@ class Plotter():
             self.axis.set_xlabel(xlabel)
             self.axis.set_ylabel(ylabel)
         
+        # undecorate if necessary
+        if undecorated:
+            self.set_undecorated()
+
     def reset(self):
         # remove all artists
         self.artists = {}
@@ -174,6 +178,18 @@ class Plotter():
                 subitem.set_visible(visible)
         else:
             print("WARNING: not able to change visibility of {}".format(item))
+
+    def set_undecorated(self, keeptitle=False, keeplabels=False, keepticks=False):
+        for axis in self.axes.values():
+            if not keeptitle:  axis.set_title(None)
+            if not keeplabels: axis.set_xlabel(None)
+            if not keeplabels: axis.set_ylabel(None)
+            if not keepticks:  axis.xaxis.set_ticks([])
+            if not keepticks:  axis.yaxis.set_ticks([])
+        
+        if Plotter.interactive:
+            self.fig.canvas.toolbar_visible = False
+            self.fig.canvas.footer_visible = False
 
     def args_scatter(self, size):
         return dict(linestyle="none", marker="o", markersize=size)
