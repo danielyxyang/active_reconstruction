@@ -8,6 +8,7 @@ from IPython.display import display
 
 from parameters import GRID_H, OBJ_D_MIN, OBJ_D_MAX, CAM_D, CAM_FOV_RAD, CAM_DOF
 from utils.helpers import polar_to_cartesian, cartesian_to_polar, polar_to_pixel
+from utils.plotting import MultipleTicks
 
 
 class Plotter():
@@ -78,6 +79,10 @@ class Plotter():
             # set view limits
             self.axis.set_xlim([0, 2*np.pi])
             self.axis.set_ylim([0, rlim])
+            # set polar ticks
+            polar_ticks = MultipleTicks(denominator=2, number=np.pi, latex="\pi", number_in_frac=False)
+            self.axis.xaxis.set_major_formatter(polar_ticks.formatter())
+            self.axis.xaxis.set_major_locator(polar_ticks.locator())
         else:
             # set descriptions
             self.axis.set_title(title)
