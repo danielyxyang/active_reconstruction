@@ -25,7 +25,7 @@ class Object():
         self.args = args
         self.surface_points = np.empty((2, 0))
         if discretize:
-            self.__discretize()
+            self._discretize()
     
     @classmethod
     def build(cls, *args, **kwargs):
@@ -69,7 +69,7 @@ class Object():
 
     # PRIVATE METHODS
 
-    def __discretize(self):
+    def _discretize(self):
         """Compute polar coordinates of points on object surface."""
         # initialize profiling
         n_iters = []
