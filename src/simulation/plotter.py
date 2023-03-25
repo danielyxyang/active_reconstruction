@@ -308,12 +308,11 @@ class Plotter():
         beta2 = -params.CAM_FOV_RAD / 2
         if self.mode == "world":
             los = camera.theta + np.pi
-            self.dynamic(
-                key,
-                lambda: self.axis.add_patch(Wedge(center=(x, y), r=params.CAM_DOF, theta1=math.degrees(los + beta2), theta2=math.degrees(los + beta1), **kwargs_region)),
-                lambda patch: patch.set(center=(x, y), theta1=math.degrees(los + beta2), theta2=math.degrees(los + beta1)),
-                visible=show_fov,
-            )
+            patches = [
+                Wedge(center=(x, y), r=params.CAM_DOF, theta1=math.degrees(los + beta2), theta2=math.degrees(los + beta1), **kwargs_region),
+                Wedge(center=(x, y), r=params.CAM_DOF, theta1=math.degrees(los + beta2), theta2=math.degrees(los + beta1), linestyle="-", linewidth=1, **self.args_to_edgecolor(kwargs_boundary)),
+            ]
+            self.dynamic_patch_collection(key, patches, match_original=True, visible=show_fov)
         elif self.mode == "polar":
             # compute FOV boundary (in camera coordinates)
             # phi, boundary = np.concatenate([
