@@ -230,8 +230,13 @@ class Plotter():
             # self.axis.tick_params(which="minor", bottom=False, left=False)
             # self.axis.grid(which="minor", **kwargs)
             def plot_f():
-                grid_range_x = np.arange(*self.axis.get_xlim(), params.GRID_H) + params.GRID_H/2
-                grid_range_y = np.arange(*self.axis.get_ylim(), params.GRID_H) + params.GRID_H/2
+                # compute grid range such that world center matches center of some pixel
+                floorceil = lambda lim: np.array([np.floor(lim[0]), np.ceil(lim[1])])
+                grid_xlim = floorceil(np.array(self.axis.get_xlim()) / params.GRID_H - 0.5)
+                grid_ylim = floorceil(np.array(self.axis.get_ylim()) / params.GRID_H - 0.5)
+                grid_range_x = (np.arange(grid_xlim[0], grid_xlim[1]+1) + 0.5) * params.GRID_H
+                grid_range_y = (np.arange(grid_ylim[0], grid_ylim[1]+1) + 0.5) * params.GRID_H
+                # compute grid lines
                 horizontal_lines = np.stack([
                     np.array([np.full_like(grid_range_y, grid_range_x[0]), grid_range_y]).T,
                     np.array([np.full_like(grid_range_y, grid_range_x[-1]), grid_range_y]).T,
