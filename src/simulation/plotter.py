@@ -61,7 +61,7 @@ class Plotter():
             self.fig.canvas.header_visible = False
 
         # set mode-specific settings
-        if self.mode == "world":
+        if self.mode == "real":
             # set descriptions
             self.axis.set_title("World" if title is None else title)
             self.axis.set_xlabel("x coordinates [m]" if xlabel is None else xlabel)
@@ -221,7 +221,7 @@ class Plotter():
 
         kwargs = dict(color=color, linestyle="-", linewidth=0.2)
         # TODO improve
-        if self.mode == "world":
+        if self.mode == "real":
             # kwargs = dict(visible=True, **kwargs) if show else dict(visible=False)
             # grid_range_x = np.arange(*self.axis.get_xlim(), params.GRID_H) + params.GRID_H/2
             # grid_range_y = np.arange(*self.axis.get_ylim(), params.GRID_H) + params.GRID_H/2
@@ -281,7 +281,7 @@ class Plotter():
         # plot camera
         key = "plot_camera:{}:camera".format(name)
         kwargs = dict(**self.args_scatter(3), color=color, label="Camera")
-        if self.mode == "world":
+        if self.mode == "real":
             self.dynamic_plot(key, x, y, **kwargs, visible=show_camera)
         elif self.mode == "polar":
             self.dynamic_plot(key, camera.theta, params.CAM_D, **kwargs, visible=show_camera)
@@ -290,7 +290,7 @@ class Plotter():
         key = "plot_camera:{}:los".format(name)
         kwargs = dict(color=color, linestyle="-", linewidth=1, alpha=0.5)
         length = params.CAM_DOF if show_los != "position" else params.CAM_D
-        if self.mode == "world":
+        if self.mode == "real":
             x_dof, y_dof = polar_to_cartesian(*camera.camera_to_polar(0, length))
             self.dynamic_plot(key, [x, x_dof], [y, y_dof], **kwargs, visible=show_los)
         elif self.mode == "polar":
@@ -306,7 +306,7 @@ class Plotter():
         kwargs_region = dict(color=color, alpha=0.1)
         beta1 = params.CAM_FOV_RAD / 2
         beta2 = -params.CAM_FOV_RAD / 2
-        if self.mode == "world":
+        if self.mode == "real":
             los = camera.theta + np.pi
             patches = [
                 Wedge(center=(x, y), r=params.CAM_DOF, theta1=math.degrees(los + beta2), theta2=math.degrees(los + beta1), **kwargs_region),
@@ -371,7 +371,7 @@ class Plotter():
         # plot view circle
         key = "plot_camera:{}:view_circle".format(name)
         kwargs = dict(color=color, linestyle="--", linewidth=1, alpha=0.5)
-        if self.mode == "world":
+        if self.mode == "real":
             self.static(key, lambda: self.axis.add_patch(Circle((0, 0), radius=params.CAM_D, **self.args_to_edgecolor(kwargs))), visible=show_view_circle)
         elif self.mode == "polar":
             self.static(key, lambda: self.axis.axhline(params.CAM_D, **kwargs), visible=show_view_circle)
@@ -383,7 +383,7 @@ class Plotter():
         key = "plot_object:{}:surface".format(name)
         kwargs = dict(color=color, linestyle="-", linewidth=1)
         phi = np.linspace(0, 2*np.pi, n)
-        if self.mode == "world":
+        if self.mode == "real":
             x, y = polar_to_cartesian(phi, obj(phi))
             self.dynamic_plot(key, x, y, **kwargs, visible=show_object)
         elif self.mode == "polar":
@@ -392,7 +392,7 @@ class Plotter():
         # plot surface points
         key = "plot_object:{}:points".format(name)
         kwargs = dict(**self.args_scatter(2), color=color, label="object surface points")
-        if self.mode == "world":
+        if self.mode == "real":
             surface_points = polar_to_cartesian(obj.surface_points[0], obj.surface_points[1])
             self.dynamic_plot(key, surface_points[0], surface_points[1], **kwargs, visible=show_points)
         elif self.mode == "polar":
@@ -401,7 +401,7 @@ class Plotter():
         # highlight surface pixels
         key = "plot_object:{}:pixels".format(name)
         kwargs = dict(color=color, alpha=0.2)
-        if self.mode == "world":
+        if self.mode == "real":
             patches = self.highlight_pixels(obj.surface_points)
             self.dynamic_patch_collection(key, patches, **self.args_to_facecolor(kwargs), visible=show_pixels)
         elif self.mode == "polar":
@@ -410,13 +410,13 @@ class Plotter():
         # plot object center
         key = "plot_object:{}:center".format(name)
         kwargs = dict(**self.args_scatter(4, marker="x"), color=color, alpha=0.5)
-        if self.mode == "world":
+        if self.mode == "real":
             self.dynamic_plot(key, 0, 0, **kwargs, visible=show_center)
 
         # plot object bounds
         key = "plot_object:{}:bounds".format(name)
         kwargs = dict(color=color, linestyle="--", linewidth=1, alpha=0.5)
-        if self.mode == "world":
+        if self.mode == "real":
             patches = [Circle((0, 0), radius=params.OBJ_D_MIN), Circle((0, 0), radius=params.OBJ_D_MAX)]
             self.static(key, lambda: self.axis.add_collection(PatchCollection(patches, **self.args_to_edgecolor(kwargs))), visible=show_bounds)
         elif self.mode == "polar":
@@ -431,7 +431,7 @@ class Plotter():
         # plot GP mean
         key = "plot_confidence_bounds:{}:mean".format(name)
         kwargs = dict(color=color, linestyle="-", linewidth=1)
-        if self.mode == "world":
+        if self.mode == "real":
             mean_x, mean_y = polar_to_cartesian(gp.x_eval, gp.mean)
             self.dynamic_plot(key, mean_x, mean_y, **kwargs, visible=show_confidence)
         elif self.mode == "polar":
@@ -440,7 +440,7 @@ class Plotter():
         # plot GP confidence bounds
         key = "plot_confidence_bounds:{}:bounds".format(name)
         kwargs = dict(color=color, alpha=0.2)
-        if self.mode == "world":
+        if self.mode == "real":
             xy = gp.confidence_region().T
             self.dynamic(
                 key,
@@ -468,7 +468,7 @@ class Plotter():
         kwargs_upper = dict(**self.args_scatter(2), color=color_upper)
         data_lower = gp.lower_points
         data_upper = gp.upper_points
-        if self.mode == "world":
+        if self.mode == "real":
             data_lower = polar_to_cartesian(data_lower[0], data_lower[1])
             data_upper = polar_to_cartesian(data_upper[0], data_upper[1])
             self.dynamic_plot(key + "_lower", data_lower[0], data_lower[1], **kwargs_lower, visible=show_points)
@@ -483,7 +483,7 @@ class Plotter():
         kwargs_upper = dict(color=color_upper, alpha=0.2)
         data_lower = gp.lower_points
         data_upper = gp.upper_points
-        if self.mode == "world":
+        if self.mode == "real":
             patches_lower = self.highlight_pixels(data_lower)
             patches_upper = self.highlight_pixels(data_upper)
             self.dynamic_patch_collection(key + "_lower", patches_lower, **self.args_to_facecolor(kwargs_lower), visible=show_pixels)
@@ -500,7 +500,7 @@ class Plotter():
         # highlight all observed surface points
         key = "plot_observations:{}".format(name)
         kwargs = dict(**self.args_scatter(2), color=color)
-        if self.mode == "world":
+        if self.mode == "real":
             self.plot_points(observations, highlight="point", show=show, **kwargs, name=key)
             self.plot_points(observations, highlight="pixelface", show=show, color=color, alpha=0.4, name=key)
         elif self.mode == "polar":
@@ -516,7 +516,7 @@ class Plotter():
             # highlight given points
             key = "plot_points:{}:point".format(name)
             style = {**self.args_scatter(4), **kwargs}
-            if self.mode == "world":
+            if self.mode == "real":
                 points = polar_to_cartesian(points[0], points[1])
                 self.dynamic_plot(key, points[0], points[1], **style, visible=show)
             elif self.mode == "polar":
@@ -529,7 +529,7 @@ class Plotter():
                 style = self.args_to_facecolor(style)
             elif highlight == "pixeledge":
                 style = self.args_to_edgecolor(style)
-            if self.mode == "world":
+            if self.mode == "real":
                 patches = self.highlight_pixels(points)
                 self.dynamic_patch_collection(key, patches, **style, visible=show)
             elif self.mode == "polar":
