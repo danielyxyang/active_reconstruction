@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 class MultipleTicks:
     # reference: https://stackoverflow.com/a/53586826
     
-    def __init__(self, denominator=None, number=np.pi, latex="\pi", number_in_frac=True):
+    def __init__(self, denominator=None, number=np.pi, latex="\pi", number_in_frac=True, fracformat=r"\frac{%s}{%s}"):
         """
         Set a tick on each integer multiple of `number` if `denominator` is None
         or every 1/`denominator`-th multiple of `number`.
@@ -14,6 +14,7 @@ class MultipleTicks:
         self.number = number
         self.latex = latex
         self.number_in_frac = number_in_frac
+        self.fracformat = fracformat
     
     def scalar_formatter(self, scalar):
         if scalar == 0:
@@ -28,18 +29,18 @@ class MultipleTicks:
     def fraction_formatter(self, num, den):
         if self.number_in_frac:
             if num == 1:
-                return "$\\frac{%s}{%s}$" % (self.latex, den)
+                return "${}$".format(self.fracformat % (self.latex, den))
             elif num == -1:
-                return "$-\\frac{%s}{%s}$" % (self.latex, den)
+                return "$-{}$".format(self.fracformat % (self.latex, den))
             elif num < -1:
-                return "$-\\frac{%s%s}{%s}$" % (-num, self.latex, den)
+                return "$-{}$".format(self.fracformat % (str(-num) + self.latex, den))
             else:
-                return "$\\frac{%s%s}{%s}$" % (num, self.latex, den)
+                return "${}$".format(self.fracformat % (str(num) + self.latex, den))
         else:
             if num < 0:
-                return "$-\\frac{%s}{%s}%s$" % (-num, den, self.latex)
+                return "$-{}{}$".format(self.fracformat % (-num, den), self.latex)
             else:
-                return "$\\frac{%s}{%s}%s$" % (num, den, self.latex)
+                return "${}{}$".format(self.fracformat % (num, den), self.latex)
     
     def multiple_formatter(self, x, pos):
         if self.denominator is None:
