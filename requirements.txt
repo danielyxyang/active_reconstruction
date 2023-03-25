@@ -1,6 +1,6 @@
 ipympl
 ipython==8.*        # required for display with kwarg clear
-ipywidgets==7.*     # required for checkboxes in VSCode (https://github.com/microsoft/vscode-jupyter/issues/8552)
+ipywidgets
 matplotlib
 numpy
 pandas
