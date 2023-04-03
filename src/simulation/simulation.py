@@ -24,6 +24,7 @@ class Simulation():
 
     def reset(self):
         self.algorithm.reset()
+        self.camera.observe(self.obj.surface_points)
         self.converged = False
 
         self.n_marginal = []
