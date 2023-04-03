@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 class MultipleTicks:
     # reference: https://stackoverflow.com/a/53586826
     
-    def __init__(self, denominator=None, number=np.pi, latex="\pi", number_in_frac=True, fracformat=r"\frac{%s}{%s}"):
+    def __init__(self, denominator=1, number=np.pi, latex="\pi", number_in_frac=True, fracformat=r"\frac{%s}{%s}"):
         """
-        Set a tick on each integer multiple of `number` if `denominator` is None
-        or every 1/`denominator`-th multiple of `number`.
+        Set `denominator` many ticks between integer multiples of `number`.
         """
         self.denominator = denominator
         self.number = number
@@ -43,7 +42,7 @@ class MultipleTicks:
                 return "${}{}$".format(self.fracformat % (num, den), self.latex)
     
     def multiple_formatter(self, x, pos):
-        if self.denominator is None:
+        if self.denominator <= 1:
             scalar = int(np.rint(x / self.number))
             return self.scalar_formatter(scalar)
         else:
@@ -59,8 +58,9 @@ class MultipleTicks:
                 return self.fraction_formatter(num, den)
 
     def locator(self):
-        if self.denominator is None:
-            return plt.MultipleLocator(self.number)
+        if self.denominator <= 1:
+            scalar = int(np.rint(1 / self.denominator))
+            return plt.MultipleLocator(scalar * self.number)
         else:
             return plt.MultipleLocator(self.number / self.denominator)
 
