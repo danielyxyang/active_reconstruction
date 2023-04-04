@@ -206,7 +206,7 @@ def build_kernel_matern_periodic_truncated(sigma=1, l=1, nu=1.5, c1=np.pi, c2=2*
         n = int(np.ceil(c2 / (2 * np.pi)))
     k = Matern(length_scale=l, nu=nu)
     # define truncated kernel
-    t = _build_transition_function(c1, c2)
+    t = _build_truncation_function(c1, c2)
     def k_trunc(X1, X2):
         R = _compute_distances(X1, X2, l)
         return t(R) * k(X1, X2)
@@ -246,13 +246,10 @@ def _compute_distances(X1, X2, l):
     return R
 
 
-def _build_transition_function(c1, c2):
-    """Build function smoothly transitioning from 1 to 0 between [c1, c2]
-    
-    Args:
-        R: (n_samples_X, n_samples_Y) matrix with pairwise distances between X and Y
-    """
+def _build_truncation_function(c1, c2):
+    """Build function smoothly transitioning from 1 to 0 between [-c2,-c1] and [c1, c2]"""
     dc = c2 - c1
-    omega = lambda x: np.where(x > 0, np.exp(-np.divide(1, x, where=x > 1e-6)), 0)
+    safe_inv = lambda x, where: np.divide(1, x, where=where, out=np.full_like(x, np.nan, dtype=float))
+    omega = lambda x: np.where(x > 1e-3, np.exp(-safe_inv(x, where=x > 1e-3)), 0) # since exp(-inv(1e-3)) = 0
     t = lambda x: omega((c2 - np.abs(x)) / dc) / (omega((c2 - np.abs(x)) / dc) + omega((np.abs(x) - c1) / dc))
     return t
