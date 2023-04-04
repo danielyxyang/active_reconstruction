@@ -258,7 +258,7 @@ class FlowerObject(Object):
 class PolygonObject(Object):
     name = "polygon"
     polygons = None
-    polygon_names = ["diamond", "convex", "concave", "star"] # names of predefined polygons
+    polygon_names = ["diamond", "convex", "concave", "star", "trident"] # names of predefined polygons
 
     def __init__(self, vertices, name=None, **kwargs):
         """Return object with the shape of a polygon.
@@ -298,9 +298,19 @@ class PolygonObject(Object):
         t4 = np.linspace(0, 2*np.pi, num=4, endpoint=False)
         t6 = np.linspace(0, 2*np.pi, num=6, endpoint=False)
         t10 = np.linspace(0, 2*np.pi, num=10, endpoint=False)
-        if   name == "diamond": return PolygonObject(np.array([t4, [3,4,6,4]]).T, name=name)
-        elif name == "convex":  return PolygonObject(np.array([t6, [4,8,6,8,4,2]]).T, name=name)
-        elif name == "concave": return PolygonObject(np.array([t10, [5,8,4,3,8,7,7,5,3,7]]).T, name=name)
-        elif name == "star":    return PolygonObject(np.array([t10, [5,8,4,6,2,7,4,7,2,8]]).T, name=name)
+        if   name == "diamond": return PolygonObject(np.array([t4, [3,4,6,4]]).T, name="diamond")
+        elif name == "convex":  return PolygonObject(np.array([t6, [4,8,6,8,4,2]]).T, name="convex")
+        elif name == "concave": return PolygonObject(np.array([t10, [5,8,4,3,8,7,7,5,3,7]]).T, name="concave")
+        elif name == "star":    return PolygonObject(np.array([t10, [5,8,4,6,2,7,4,7,2,8]]).T, name="star")
+        elif name == "trident": return PolygonObject(np.array([
+            [np.pi/2*0, 8],
+            [np.pi/2*0.2, 2],
+            [np.pi/2*0.21, 4.7],
+            [np.pi/2*1, 3],
+            [np.pi/2*2, 8],
+            [np.pi/2*3, 3],
+            [np.pi/2*3.79, 4.7],
+            [np.pi/2*3.8, 2],
+        ]), name="trident")
 
 OBJECTS = [EllipseObject, SquareObject, FlowerObject, PolygonObject]
