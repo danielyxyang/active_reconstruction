@@ -52,7 +52,10 @@ class ObjectSelector(widgets.VBox, widgets.widget_description.DescriptionWidget,
                 amplitude=widgets.FloatSlider(value=2, min=0, max=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 2, step=0.1),
                 frequency=widgets.IntSlider(value=5, min=0, max=15),
             )),
-            *[(str(obj), obj) for obj in PolygonObject.build_polygons()]
+            (PolygonObject.name, widgets.interactive(
+                PolygonObject.build,
+                name=widgets.Dropdown(options=PolygonObject.polygon_names),
+            )),
         ]
 
         # create widget for selecting object

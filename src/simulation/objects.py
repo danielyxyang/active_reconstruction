@@ -258,6 +258,7 @@ class FlowerObject(Object):
 class PolygonObject(Object):
     name = "polygon"
     polygons = None
+    polygon_names = ["diamond", "convex", "concave", "star"] # names of predefined polygons
 
     def __init__(self, vertices, name=None, **kwargs):
         """Return object with the shape of a polygon.
@@ -289,18 +290,17 @@ class PolygonObject(Object):
         return "{}_{}".format(self.obj_name, self.args["name"])
 
     @staticmethod
-    def build_polygons():
-        # build polygons once to reduce computation time (takes ~6sec)
-        if PolygonObject.polygons is None:
-            t4 = np.linspace(0, 2*np.pi, num=4, endpoint=False)
-            t6 = np.linspace(0, 2*np.pi, num=6, endpoint=False)
-            t10 = np.linspace(0, 2*np.pi, num=10, endpoint=False)
-            PolygonObject.polygons = [
-                PolygonObject(np.array([t4, [3,4,6,4]]).T, name="diamond"),
-                PolygonObject(np.array([t6, [4,8,6,8,4,2]]).T, name="convex"),
-                PolygonObject(np.array([t10, [5,8,4,3,8,7,7,5,3,7]]).T, name="concave"),
-                PolygonObject(np.array([t10, [5,8,4,6,2,7,4,7,2,8]]).T, name="star"),
-            ]
-        return PolygonObject.polygons
+    def build(name):
+        """Build pre-defined polygons.
+        
+        Note: This function overwrites the Object.build method and is used to
+        interactively select polygons using ipywidgets."""
+        t4 = np.linspace(0, 2*np.pi, num=4, endpoint=False)
+        t6 = np.linspace(0, 2*np.pi, num=6, endpoint=False)
+        t10 = np.linspace(0, 2*np.pi, num=10, endpoint=False)
+        if   name == "diamond": return PolygonObject(np.array([t4, [3,4,6,4]]).T, name=name)
+        elif name == "convex":  return PolygonObject(np.array([t6, [4,8,6,8,4,2]]).T, name=name)
+        elif name == "concave": return PolygonObject(np.array([t10, [5,8,4,3,8,7,7,5,3,7]]).T, name=name)
+        elif name == "star":    return PolygonObject(np.array([t10, [5,8,4,6,2,7,4,7,2,8]]).T, name=name)
 
 OBJECTS = [EllipseObject, SquareObject, FlowerObject, PolygonObject]
