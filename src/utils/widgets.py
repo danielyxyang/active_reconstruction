@@ -16,12 +16,20 @@ from algorithms.gp import (
 from simulation.objects import EllipseObject, SquareObject, FlowerObject, PolygonObject
 
 
-def build_widget_cam_slider():
-    return widgets.FloatSlider(value=0, min=0, max=2*np.pi, step=0.01, description="camera")
-
-
 def build_widget_outputs(names):
     return {name: widgets.Output() for name in names}
+
+
+class CameraControl(widgets.HBox, widgets.widget_description.DescriptionWidget, widgets.ValueWidget):
+    """Custom float slider allowing to scroll and use arrow keys inside readout."""
+    value = Any(help="Camera position")
+
+    def __init__(self, **kwargs):
+        cam_slider = widgets.FloatSlider(value=0, min=0, max=2*np.pi, step=0.01, description="camera", readout=False)
+        cam_text = widgets.BoundedFloatText(value=0, min=0, max=2*np.pi, step=0.01, layout=widgets.Layout(flex="0 0 auto", width="4rem"))
+        widgets.link((cam_slider, "value"), (cam_text, "value"))
+        widgets.link((cam_slider, "value"), (self, "value"))
+        super().__init__(children=[cam_slider, cam_text], layout=widgets.Layout(width="var(--jp-widgets-inline-width)"), **kwargs)
 
 
 class ObjectSelector(widgets.VBox, widgets.widget_description.DescriptionWidget, widgets.ValueWidget):
