@@ -350,6 +350,22 @@ class WeightedSimpleConfidenceObjective(Objective):
 class UncertaintyObjective(Objective):
     """Area of circle sector between upper and lower confidence boundary with unit angle in radians."""
 
+    def compute_estimate_points(self, camera, data):
+        gp = data[Objective.CONFIDENCE]
+        
+        # compute summation boundary
+        c1, c2 = self.get_boundary(camera, data)
+        # create list of candidate pixels in confidence region
+        pixel_centers = Objective.get_candidate_pixels()
+        pixel_polar = cartesian_to_polar(*pixel_centers)
+        # keep pixels within c1 and c2
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
+        # keep pixels within uncertainty at current camera location
+        lower, upper = gp.confidence_boundary(camera.theta, interp=True)
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower[1], upper[1]))]
+        pixel_polar[0] %= (2*np.pi)
+        return pixel_polar
+
     def compute_estimate_cf(self, camera, data):
         gp = data[Objective.CONFIDENCE]
         # compute summation boundary
@@ -367,6 +383,22 @@ class UncertaintyObjective(Objective):
 
 class PolarUncertaintyObjective(Objective):
     """Difference between upper and lower confidence boundary."""
+
+    def compute_estimate_points(self, camera, data):
+        gp = data[Objective.CONFIDENCE]
+
+        # compute summation boundary
+        c1, c2 = self.get_boundary(camera, data)
+        # create list of candidate pixels in intersection
+        pixel_centers = Objective.get_candidate_pixels(xlim=(0, 2*np.pi), ylim=(0, 10))
+        pixel_polar = pixel_centers
+        # keep pixels within c1 and c2
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
+        # keep pixels within uncertainty at current camera location
+        lower, upper = gp.confidence_boundary(camera.theta, interp=True)
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower[1], upper[1]))]
+        pixel_polar[0] %= (2*np.pi)
+        return pixel_polar
 
     def compute_estimate_cf(self, camera, data):
         gp = data[Objective.CONFIDENCE]

@@ -174,14 +174,22 @@ def build_algorithms(build_gp=lambda: None, object=None):
         ),
 
         # ALGORITHMS WITH UNCERTAINTY OBJECTIVES
-        "Uncertainty_cf": dict(
-            algorithm=GreedyAlgorithm(UncertaintyObjective(use_cf=True), gp=build_gp()),
+        "Uncertainty": dict(
+            algorithm=GreedyAlgorithm(UncertaintyObjective(), gp=build_gp()),
             color="steelblue",
         ),
-        "UncertaintyPolar_cf": dict(
-            algorithm=GreedyAlgorithm(PolarUncertaintyObjective(use_cf=True), gp=build_gp()),
+        # "Uncertainty_cf": dict(
+        #     algorithm=GreedyAlgorithm(UncertaintyObjective(use_cf=True), gp=build_gp()),
+        #     color="steelblue",
+        # ),
+        "UncertaintyPolar": dict(
+            algorithm=GreedyAlgorithm(PolarUncertaintyObjective(), gp=build_gp()),
             color="slategray",
         ),
+        # "UncertaintyPolar_cf": dict(
+        #     algorithm=GreedyAlgorithm(PolarUncertaintyObjective(use_cf=True), gp=build_gp()),
+        #     color="slategray",
+        # ),
         
         # MULTI-PHASE ALGORITHMS
         "TwoPhase-ConfidenceSimple-Uncertainty": dict(
