@@ -2,7 +2,7 @@ import numpy as np
 
 import parameters as params
 from algorithms.algorithms import GreedyAlgorithm
-from algorithms.objectives import SurfaceMarginalObjective
+from algorithms.objectives import ObservedSurfaceMarginalObjective
 from simulation.camera import Camera
 from utils.math import setdiff2d
 
@@ -16,7 +16,7 @@ class Simulation():
 
         self.n_marginal = None # store marginal number of observed points for each measurement
         self.regret = None
-        self.algorithm_opt = GreedyAlgorithm(SurfaceMarginalObjective(obj=object), gp=algorithm.gp)
+        self.algorithm_opt = GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=algorithm.gp)
 
         self.reset()
 

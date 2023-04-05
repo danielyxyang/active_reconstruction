@@ -88,7 +88,7 @@ class Objective():
         return c1, c2
 
 
-class SurfaceMarginalObjective(Objective):
+class ObservedSurfaceMarginalObjective(Objective):
     """Number of surface points on the object have not previously been observed."""
 
     def __init__(self, obj=None, **kwargs):
@@ -103,7 +103,7 @@ class SurfaceMarginalObjective(Objective):
         return setdiff2d(observed_points.T, observations.T).T
 
 
-class IntersectionObjective(Objective):
+class IntersectionOcclusionAwareObjective(Objective):
     """Number of visible pixels within intersection of FOV and confidence region."""
     
     def compute_estimate_points(self, camera, data):
@@ -123,8 +123,12 @@ class IntersectionObjective(Objective):
         pixel_polar[0] %= 2*np.pi
         return pixel_polar
 
+    def get_boundary(self, camera, data):
+        gp = data[Objective.CONFIDENCE]
+        return Objective.get_boundary_intersections(camera, gp)
 
-class SimpleIntersectionObjective(Objective):
+
+class IntersectionObjective(Objective):
     """Number of pixels within intersection of FOV and confidence region."""
     
     def compute_estimate_points(self, camera, data):
@@ -208,7 +212,7 @@ class ConfidenceObjective(Objective):
         return Objective.get_boundary_intersections(camera, gp)
 
 
-class SimpleConfidenceObjective(Objective):
+class ConfidenceSimpleObjective(Objective):
     """Number of pixels within confidence region bounded by endpoints of FOV."""
 
     def compute_estimate_points(self, camera, data):
@@ -247,7 +251,7 @@ class SimpleConfidenceObjective(Objective):
         return c1, c2
 
 
-class PolarSimpleConfidenceObjective(Objective):
+class ConfidencePolarObjective(Objective):
     """Number of polar pixels within confidence region bounded by endpoints of FOV."""
 
     def compute_estimate_points(self, camera, data):
@@ -286,7 +290,7 @@ class PolarSimpleConfidenceObjective(Objective):
         return c1, c2
 
 
-class WeightedSimpleConfidenceObjective(Objective):
+class ConfidenceSimpleWeightedObjective(Objective):
     """Number of pixels within confidence region bounded by endpoints of FOV and weighted by
     `FOV(phi) / CAM_D`."""
 
@@ -317,7 +321,7 @@ class WeightedSimpleConfidenceObjective(Objective):
         return c1, c2
 
 
-# class Weighted2SimpleConfidenceObjective(Objective):
+# class ConfidenceSimpleWeighted2Objective(Objective):
 #     """Some docstring"""
 
 #     def compute_estimate_cf(self, camera, data):
@@ -381,7 +385,7 @@ class UncertaintyObjective(Objective):
         return c1, c2
 
 
-class PolarUncertaintyObjective(Objective):
+class UncertaintyPolarObjective(Objective):
     """Difference between upper and lower confidence boundary."""
 
     def compute_estimate_points(self, camera, data):

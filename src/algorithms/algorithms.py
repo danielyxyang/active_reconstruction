@@ -2,15 +2,15 @@ import numpy as np
 
 from algorithms.objectives import (
     Objective,
-    SurfaceMarginalObjective,
+    ObservedSurfaceMarginalObjective,
+    IntersectionOcclusionAwareObjective,
     IntersectionObjective,
-    SimpleIntersectionObjective,
     ConfidenceObjective,
-    SimpleConfidenceObjective,
-    PolarSimpleConfidenceObjective,
-    WeightedSimpleConfidenceObjective,
+    ConfidenceSimpleObjective,
+    ConfidencePolarObjective,
+    ConfidenceSimpleWeightedObjective,
     UncertaintyObjective,
-    PolarUncertaintyObjective,
+    UncertaintyPolarObjective,
 )
 from simulation.camera import Camera
 from utils.math import is_in_range
@@ -70,7 +70,7 @@ class GreedyAlgorithm(Algorithm):
         return self.estimates
 
 
-class GreedyTwoPhaseAlgorithm(Algorithm):
+class TwoPhaseAlgorithm(Algorithm):
     """Class for greedy 2-phase algorithms.
     
     Phase 1: finding two boundaries maximizing objective 1
@@ -127,21 +127,21 @@ def build_algorithms(build_gp=lambda: None, object=None):
     return {
         # ALGORITHM WITH TRUE OBJECTIVE
         "ObservedSurfaceMarginal": dict(
-            algorithm=GreedyAlgorithm(SurfaceMarginalObjective(obj=object), gp=build_gp()),
+            algorithm=GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=build_gp()),
             color="darkred",
         ),
 
         # ALGORITHMS WITH CONFIDENCE OBJECTIVES
-        "Intersection": dict(
-            algorithm=GreedyAlgorithm(IntersectionObjective(), gp=build_gp()),
+        "IntersectionOcclusionAware": dict(
+            algorithm=GreedyAlgorithm(IntersectionOcclusionAwareObjective(), gp=build_gp()),
             color="cyan",
         ),
-        "IntersectionSimple": dict(
-            algorithm=GreedyAlgorithm(SimpleIntersectionObjective(), gp=build_gp()),
+        "Intersection": dict(
+            algorithm=GreedyAlgorithm(IntersectionObjective(), gp=build_gp()),
             color="deepskyblue",
         ),
         # "IntersectionSimple_cf": dict(
-        #     algorithm=GreedyAlgorithm(SimpleIntersectionObjective(use_cf=True), gp=build_gp()),
+        #     algorithm=GreedyAlgorithm(IntersectionObjective(use_cf=True), gp=build_gp()),
         #     color="steelblue",
         # ),
         "Confidence": dict(
@@ -153,23 +153,23 @@ def build_algorithms(build_gp=lambda: None, object=None):
         #     color="goldenrod",
         # ),
         "ConfidenceSimple": dict(
-            algorithm=GreedyAlgorithm(SimpleConfidenceObjective(), gp=build_gp()),
+            algorithm=GreedyAlgorithm(ConfidenceSimpleObjective(), gp=build_gp()),
             color="darkorange",
         ),
         # "ConfidenceSimple_cf": dict(
-        #     algorithm=GreedyAlgorithm(SimpleConfidenceObjective(use_cf=True), gp=build_gp()),
+        #     algorithm=GreedyAlgorithm(ConfidenceSimpleObjective(use_cf=True), gp=build_gp()),
         #     color="orange",
         # ),
         "ConfidenceSimplePolar": dict(
-            algorithm=GreedyAlgorithm(PolarSimpleConfidenceObjective(), gp=build_gp()),
+            algorithm=GreedyAlgorithm(ConfidencePolarObjective(), gp=build_gp()),
             color="limegreen",
         ),
         # "ConfidenceSimplePolar_cf": dict(
-        #     algorithm=GreedyAlgorithm(PolarSimpleConfidenceObjective(use_cf=True), gp=build_gp()),
+        #     algorithm=GreedyAlgorithm(ConfidencePolarObjective(use_cf=True), gp=build_gp()),
         #     color="lime",
         # ),
         "ConfidenceSimpleWeighted_cf": dict(
-            algorithm=GreedyAlgorithm(WeightedSimpleConfidenceObjective(use_cf=True), gp=build_gp()),
+            algorithm=GreedyAlgorithm(ConfidenceSimpleWeightedObjective(use_cf=True), gp=build_gp()),
             color="magenta",
         ),
 
@@ -183,17 +183,17 @@ def build_algorithms(build_gp=lambda: None, object=None):
         #     color="steelblue",
         # ),
         "UncertaintyPolar": dict(
-            algorithm=GreedyAlgorithm(PolarUncertaintyObjective(), gp=build_gp()),
+            algorithm=GreedyAlgorithm(UncertaintyPolarObjective(), gp=build_gp()),
             color="slategray",
         ),
         # "UncertaintyPolar_cf": dict(
-        #     algorithm=GreedyAlgorithm(PolarUncertaintyObjective(use_cf=True), gp=build_gp()),
+        #     algorithm=GreedyAlgorithm(UncertaintyPolarObjective(use_cf=True), gp=build_gp()),
         #     color="slategray",
         # ),
         
         # MULTI-PHASE ALGORITHMS
         "TwoPhase-ConfidenceSimple-Uncertainty": dict(
-            algorithm=GreedyTwoPhaseAlgorithm(SimpleConfidenceObjective(), UncertaintyObjective(use_cf=True), gp=build_gp()),
+            algorithm=TwoPhaseAlgorithm(ConfidenceSimpleObjective(), UncertaintyObjective(use_cf=True), gp=build_gp()),
             color="deeppink",
         ),
     }
