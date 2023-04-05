@@ -193,7 +193,6 @@ class Plotter():
             if not keepticks:  axis.yaxis.set_ticks([])
         
         if Plotter.interactive:
-            self.fig.canvas.toolbar_visible = False
             self.fig.canvas.footer_visible = False
 
     def args_scatter(self, size, marker="o"):
@@ -219,7 +218,7 @@ class Plotter():
     def plot_grid(self, show_grid=True):
         color = self.colors["grid"]
 
-        kwargs = dict(color=color, linestyle="-", linewidth=0.2)
+        kwargs = dict(color=color, linestyle="-", linewidth=0.2, alpha=0.5)
         # TODO improve
         if self.mode == "real":
             # kwargs = dict(visible=True, **kwargs) if show else dict(visible=False)
@@ -423,13 +422,14 @@ class Plotter():
             self.static(key + "_lower", lambda: self.axis.axhline(params.OBJ_D_MIN, **kwargs), visible=show_bounds)
             self.static(key + "_upper", lambda: self.axis.axhline(params.OBJ_D_MAX, **kwargs), visible=show_bounds)
 
-    def plot_confidence(self, gp, show_confidence=True, show_points=False, show_pixels=False, name=None):
+    def plot_confidence(self, gp, show_confidence=True, show_boundary=False, show_points=False, show_pixels=False, name=None):
+
         color = self.colors["confidence"]
         color_lower = self.colors["confidence_lower"]
         color_upper = self.colors["confidence_upper"]
 
         # plot GP mean
-        key = "plot_confidence_bounds:{}:mean".format(name)
+        key = "plot_confidence:{}:mean".format(name)
         kwargs = dict(color=color, linestyle="-", linewidth=1)
         if self.mode == "real":
             mean_x, mean_y = polar_to_cartesian(gp.x_eval, gp.mean)
@@ -437,8 +437,8 @@ class Plotter():
         elif self.mode == "polar":
             self.dynamic_plot(key, gp.x_eval, gp.mean, **kwargs, visible=show_confidence)
         
-        # plot GP confidence bounds
-        key = "plot_confidence_bounds:{}:bounds".format(name)
+        # plot GP confidence region
+        key = "plot_confidence:{}:region".format(name)
         kwargs = dict(color=color, alpha=0.2)
         if self.mode == "real":
             xy = gp.confidence_region().T
@@ -462,8 +462,21 @@ class Plotter():
                 visible=show_confidence,
             )
         
+        # plot GP confidence bounds
+        key = "plot_confidence:{}:bounds".format(name)
+        kwargs = dict(color=color, linestyle="-", linewidth=1)
+        lower, upper = gp.confidence_boundary()
+        if self.mode == "real":
+            lower = polar_to_cartesian(*lower)
+            upper = polar_to_cartesian(*upper)
+            self.dynamic_plot(key + "_lower", *lower, **kwargs, visible=show_boundary)
+            self.dynamic_plot(key + "_upper", *upper, **kwargs, visible=show_boundary)
+        elif self.mode == "polar":
+            self.dynamic_plot(key + "_lower", *lower, **kwargs, visible=show_boundary)
+            self.dynamic_plot(key + "_upper", *upper, **kwargs, visible=show_boundary)
+        
         # plot discretization points of confidence bounds
-        key = "plot_confidence_bounds:{}:points".format(name)
+        key = "plot_confidence:{}:points".format(name)
         kwargs_lower = dict(**self.args_scatter(2), color=color_lower)
         kwargs_upper = dict(**self.args_scatter(2), color=color_upper)
         data_lower = gp.lower_points
@@ -478,7 +491,7 @@ class Plotter():
             self.dynamic_plot(key + "_upper", data_upper[0], data_upper[1], **kwargs_upper, visible=show_points)
         
         # highlight discretization pixels of confidence bounds
-        key = "plot_confidence_bounds:{}:pixels".format(name)
+        key = "plot_confidence:{}:pixels".format(name)
         kwargs_lower = dict(color=color_lower, alpha=0.2)
         kwargs_upper = dict(color=color_upper, alpha=0.2)
         data_lower = gp.lower_points
