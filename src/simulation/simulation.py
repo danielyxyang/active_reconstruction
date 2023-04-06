@@ -14,8 +14,8 @@ class Simulation():
         self.algorithm = algorithm
         self.converged = False
 
-        self.n_marginal = None # store marginal number of observed points for each measurement
-        self.regret = None
+        self.n_marginal = [] # store number of newly observed points
+        self.n_marginal_opt = [] # store largest possible number of newly observed points
         self.algorithm_opt = GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=algorithm.gp)
 
         self.reset()
@@ -28,7 +28,7 @@ class Simulation():
         self.converged = False
 
         self.n_marginal = []
-        self.regret = []
+        self.n_marginal_opt = []
 
     def take_measurement(self):
         # compute number of marginal observations
@@ -42,9 +42,8 @@ class Simulation():
         self.algorithm_opt.reset(algorithm=self.algorithm)
         camera_opt = Camera(theta=self.algorithm_opt.compute_nbv())
         camera_opt.observe(self.obj.surface_points)
-        # observation_opt = Camera(theta=self.algorithm_opt.compute_nbv()).compute_observation(self.obj.surface_points)
         n_marginal_observation_opt = len(setdiff2d(camera_opt.observation.T, self.algorithm.observations.T))
-        self.regret.append(n_marginal_observation_opt - n_marginal_observation)
+        self.n_marginal_opt.append(n_marginal_observation_opt)
 
         self.algorithm.add_observation(self.camera.observation, noise=params.GRID_H)
 
@@ -66,17 +65,67 @@ class Simulation():
         return np.sum(self.n_marginal) / len(self.obj.surface_points.T)
     
     def results(self):
-        n_measurements = len(self.n_marginal)
-        rounds = np.arange(1, n_measurements + 1)
-        n_marginal = self.n_marginal
-        n_total = np.cumsum(n_marginal)
-        n_max = len(self.obj.surface_points.T)
-        n_remaining = n_max - n_total[-1] if n_measurements > 0 else n_max
-        regret = self.regret
+        return SimulationResults(self.n_marginal, self.n_marginal_opt, len(self.obj.surface_points.T))
+
+
+class SimulationResults():
+    def __init__(self, n_marginal, n_marginal_opt, n_max):
+        self.n_marginal = np.asarray(n_marginal)
+        self.n_marginal_opt = np.asarray(n_marginal_opt)
+        self.n_max = n_max
+    
+    def to_dict(self):
         return {
-            "n_measurements": n_measurements,
-            "n_marginal": np.array([rounds, n_marginal]),
-            "n_total": np.array([rounds, n_total / n_max]),
-            "n_remaining": n_remaining,
-            "regret": np.array([rounds, regret]),
+            "n_measurements": self.n_marginal,
+            "n_measurements_opt": self.n_marginal_opt,
+            "n_max": self.n_max,
         }
+    @staticmethod
+    def from_dict(dict):
+        return SimulationResults(
+            dict["n_measurements"],
+            dict["n_measurements_opt"],
+            dict["n_max"],
+        )
+    
+    def _nan_if_empty(self, op, list):
+        return op(list) if len(list) > 0 else np.nan
+
+    @property
+    def n_measurements(self):
+        return len(self.n_marginal)
+    def n_measurements_upto_thresh(self, thresh):
+        return self._nan_if_empty(np.min, self.rounds[self.n_total_rel >= thresh])
+    @property
+    def rounds(self):
+        return np.arange(1, self.n_measurements + 1)
+    
+    @property
+    def n_total(self):
+        return np.cumsum(self.n_marginal)
+    @property
+    def n_total_rel(self):
+        return self.n_total / self.n_max
+    @property
+    def n_total_final(self):
+        return self.n_total[-1] if self.n_measurements > 0 else 0
+    @property
+    def n_total_final_rel(self):
+        return self.n_total_final / self.n_max
+    @property
+    def n_remaining(self):
+        return self.n_max - self.n_total_final
+    
+    @property
+    def regret(self):
+        return self.n_marginal_opt - self.n_marginal
+    @property
+    def regret_avg(self):
+        return self._nan_if_empty(np.mean, self.regret)
+    @property
+    def regret_max(self):
+        return self._nan_if_empty(np.max, self.regret)
+    @property
+    def regret_min(self):
+        return self._nan_if_empty(np.min, self.regret)
+
