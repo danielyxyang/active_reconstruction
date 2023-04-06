@@ -147,21 +147,21 @@ def build_kernel_matern(sigma=1, l=1, nu=1.5):
     return kernel
 
 
-def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5):
+def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5, normalized=True):
     if nu == 0.5:
         def kernel(X1, X2):
-            # normalize input to [0,2pi]
+            # normalize input to [0,2pi)
             X1 = np.asarray(X1) % (2*np.pi)
             X2 = np.asarray(X2) % (2*np.pi)
             # evaluate closed-form kernel
             R = _compute_distances(X1, X2, l)
             u = R - np.pi/l
             return np.cosh(u)
-        c = kernel([[0]], [[0]]) # normalization constant
+        c = kernel([[0]], [[0]]) if normalized else 1 # normalization constant
         return lambda X1, X2: sigma**2/c * kernel(X1, X2)
     elif nu == 1.5:
         def kernel(X1, X2):
-            # normalize input to [0,2pi]
+            # normalize input to [0,2pi)
             X1 = np.asarray(X1) % (2*np.pi)
             X2 = np.asarray(X2) % (2*np.pi)
             # evaluate closed-form kernel
@@ -170,11 +170,11 @@ def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5):
             a0 = np.pi*l/6 * (l/np.pi + np.sqrt(3)/np.tanh(np.sqrt(3)*np.pi/l))
             a1 = -l**2/6
             return a0 * np.cosh(u) + a1 * u*np.sinh(u)
-        c = kernel([[0]], [[0]]) # normalization constant
+        c = kernel([[0]], [[0]]) if normalized else 1 # normalization constant
         return lambda X1, X2: sigma**2/c * kernel(X1, X2)
     elif nu == 2.5:
         def kernel(X1, X2):
-            # normalize input to [0,2pi]
+            # normalize input to [0,2pi)
             X1 = np.asarray(X1) % (2*np.pi)
             X2 = np.asarray(X2) % (2*np.pi)
             # evaluate closed-form kernel
@@ -184,7 +184,7 @@ def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5):
             a1 = -np.pi*l**3/100 * (3/2*l/np.pi + np.sqrt(5)/np.tanh(np.sqrt(5)*np.pi/l))
             a2 = l**4/200
             return a0 * np.cosh(u) + a1 * u*np.sinh(u) + a2 * u**2*np.cosh(u)
-        c = kernel([[0]], [[0]]) # normalization constant
+        c = kernel([[0]], [[0]]) if normalized else 1 # normalization constant
         return lambda X1, X2: sigma**2/c * kernel(X1, X2)
     elif nu % 1 == 0.5:
         # TODO
@@ -227,6 +227,10 @@ def build_kernel_matern_periodic_warped(sigma=1, l=1, nu=1.5):
             print("WARNING: Matérn kernel periodized by warping might not work for non-scalar samples!") # TODO check?
         return sigma**2 * k(u(X1), u(X2))
     return kernel
+
+
+def eval_kernel(k, r):
+    return np.diag(k(r, np.zeros_like(r)))
 
 
 # HELPER FUNCTIONS

@@ -120,7 +120,7 @@ class KernelSelector(widgets.VBox, widgets.widget_description.DescriptionWidget,
                 sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
                 l=widgets.FloatSlider(value=0.2, min=0.02, max=2, step=0.02),
                 nu=widgets.Dropdown(options=[0.5, 1.5, 2.5], index=1),
-                n_approx=widgets.IntSlider(value=1, min=0, max=10),
+                normalized=widgets.fixed(True),
             )),
             ("matern_periodic_approx", widgets.interactive(
                 build_kernel_matern_periodic_approx,
