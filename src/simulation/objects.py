@@ -35,7 +35,7 @@ class Object():
         return cls(*args, **kwargs)
 
     def __str__(self):
-        return self.obj_name + "".join(["_{}{}".format(name[0], arg if arg % 1 else int(arg)) for name, arg in self.args.items()])
+        return self.obj_name + "".join(["_{}{}".format(name[0], int(arg) if arg % 1 < 1e-6 else arg) for name, arg in self.args.items()])
     
     def __repr__(self):
         return str(self)
@@ -271,6 +271,7 @@ class PolygonObject(Object):
 
         # TODO add sanity checks (e.g. vertices sorted by phi, no duplicates and also no 0 and 2pi)
         # extend list of vertices with wrap-around to cover [0,...] and [...,2pi]
+        vertices = np.asarray(vertices)
         vertices = np.concatenate((
             [(vertices[-1, 0] - 2*np.pi, vertices[-1, 1])],
             vertices,
