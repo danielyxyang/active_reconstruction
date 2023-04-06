@@ -180,9 +180,9 @@ def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5):
             # evaluate closed-form kernel
             R = _compute_distances(X1, X2, l)
             u = np.sqrt(5) * (R - np.pi/l)
-            a0 = -(np.pi*l)**2/200 * (-5 + 3*(l/np.pi)**2 + 3*np.sqrt(5)*(l/np.pi)/np.tanh(np.sqrt(5)*np.pi/l) + 10/np.tanh(np.sqrt(5)*np.pi/l)**2)
-            a1 = np.pi*l**3/100 * (3/2*l/np.pi + np.sqrt(5)/np.tanh(np.sqrt(5)*np.pi/l))
-            a2 = -l**4/200
+            a0 = (np.pi*l)**2/200 * (-5 + 3*(l/np.pi)**2 + 3*np.sqrt(5)*(l/np.pi)/np.tanh(np.sqrt(5)*np.pi/l) + 10/np.tanh(np.sqrt(5)*np.pi/l)**2)
+            a1 = -np.pi*l**3/100 * (3/2*l/np.pi + np.sqrt(5)/np.tanh(np.sqrt(5)*np.pi/l))
+            a2 = l**4/200
             return a0 * np.cosh(u) + a1 * u*np.sinh(u) + a2 * u**2*np.cosh(u)
         c = kernel([[0]], [[0]]) # normalization constant
         return lambda X1, X2: sigma**2/c * kernel(X1, X2)
