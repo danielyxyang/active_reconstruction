@@ -42,11 +42,11 @@ class Objective():
     
     @staticmethod
     def get_candidate_pixels(xlim=None, ylim = None):
+        # possible that GP is slightly outside of OBJ_D_MAX, but we assume it stays inside CAM_D
         if xlim is None:
-            xlim = (-params.OBJ_D_MAX, params.OBJ_D_MAX)
+            xlim = (-params.CAM_D, params.CAM_D)
         if ylim is None:
-            ylim = (-params.OBJ_D_MAX, params.OBJ_D_MAX)
-        # TODO GP can also be outside of OBJ_D_MAX!
+            ylim = (-params.CAM_D, params.CAM_D)
         bbox_min = cartesian_to_pixel(xlim[0], ylim[0])
         bbox_max = cartesian_to_pixel(xlim[1], ylim[1])
         pixels = np.concatenate(np.stack(np.mgrid[
@@ -110,7 +110,6 @@ class IntersectionOcclusionAwareObjective(Objective):
         gp = data[Objective.CONFIDENCE]
         
         # create list of candidate pixels in intersection
-        # TODO improve (e.g. filter based on OBJ_D_MAX as circle, not square)
         pixel_centers = Objective.get_candidate_pixels()
         pixel_polar = cartesian_to_polar(*pixel_centers)
         # keep points in FOV
@@ -135,7 +134,6 @@ class IntersectionObjective(Objective):
         gp = data[Objective.CONFIDENCE]
         
         # create list of candidate pixels in intersection
-        # TODO improve (e.g. filter based on OBJ_D_MAX as circle, not square)
         pixel_centers = Objective.get_candidate_pixels()
         pixel_polar = cartesian_to_polar(*pixel_centers)
         # keep points in FOV
