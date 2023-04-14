@@ -1,4 +1,5 @@
 import time
+import json
 import contextlib
 import numpy as np
 
@@ -143,6 +144,25 @@ class Profiler():
                 if len(self.__names_context) > 0:
                     name_prev = self.__names_context[-1]
                     self.start(name=name_prev)
+
+
+def build_json_encoder(encoders=[]):
+    """
+    Encode common non-serializable types into serializable ones with the help of
+    the additional list of encoders.
+    """
+    def encoder(obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        for instance, encoder in encoders:
+            if isinstance(obj, instance):
+                return encoder(obj)
+        return json.JSONEncoder().default(obj)
+    return encoder
 
 
 class LoopChecker():
