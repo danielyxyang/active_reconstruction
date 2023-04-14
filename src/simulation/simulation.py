@@ -23,6 +23,7 @@ class Simulation():
 
     def reset(self):
         self.algorithm.reset()
+        self.algorithm_opt.reset()
         self.camera.observe(self.obj.surface_points)
         self.converged = False
 
@@ -38,13 +39,13 @@ class Simulation():
         self.n_marginal.append(n_marginal_observation)
 
         # compute regret
-        self.algorithm_opt.reset(algorithm=self.algorithm)
         camera_opt = Camera(theta=self.algorithm_opt.compute_nbv())
         camera_opt.observe(self.obj.surface_points)
         n_marginal_observation_opt = len(setdiff2d(camera_opt.observation.T, self.algorithm.observations.T))
         self.n_marginal_opt.append(n_marginal_observation_opt)
 
         self.algorithm.add_observation(self.camera.observation, noise=params.OBS_NOISE)
+        self.algorithm_opt.reset(algorithm=self.algorithm) # inject changes into algorithm_opt
 
     def move_camera(self, theta):
         self.camera.move(theta)

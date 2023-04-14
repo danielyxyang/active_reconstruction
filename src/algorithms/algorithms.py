@@ -51,28 +51,25 @@ class GreedyAlgorithm(Algorithm):
         super().__init__(**kwargs)
         self.objective = objective
         self.thetas = np.linspace(0, 2*np.pi, num=n)
-        self.estimates = None
 
-    def reset(self, **kwargs):
-        super().reset(**kwargs)
-        self.estimates = None
-    
-    def add_observation(self, observation, noise=0):
-        super().add_observation(observation, noise=noise)
-        self.estimates = None
-    
-    def compute_nbv(self):
-        estimates = self.compute_estimates()
+    def compute_nbv(self, with_estimates=False):
+        # find NBV
+        estimates = self.objective(self.thetas, {
+            Objective.CONFIDENCE: self.gp,
+            Objective.OBSERVATIONS: self.observations,
+        })
         nbv_theta = self.thetas[np.argmax(estimates)]
-        return nbv_theta
+        # return NBV and optionally estimates
+        if not with_estimates:
+            return nbv_theta
+        else:
+            return nbv_theta, estimates
     
-    def compute_estimates(self):
-        if self.estimates is None:
-            self.estimates = self.objective(self.thetas, {
-                Objective.CONFIDENCE: self.gp,
-                Objective.OBSERVATIONS: self.observations,
-            })
-        return self.estimates
+    def compute_estimate_points(self, camera):
+        return self.objective.compute_estimate_points(camera, {
+            Objective.CONFIDENCE: self.gp,
+            Objective.OBSERVATIONS: self.observations,
+        })
 
 
 class TwoPhaseAlgorithm(Algorithm):
@@ -86,47 +83,32 @@ class TwoPhaseAlgorithm(Algorithm):
         self.objective1 = objective1
         self.objective2 = objective2
         self.thetas = np.linspace(0, 2*np.pi, num=n)
-        self.estimates1 = None
-        self.estimates2 = None
 
-    def reset(self, **kwargs):
-        super().reset(**kwargs)
-        self.estimates1 = None
-        self.estimates2 = None
-    
-    def add_observation(self, observation, noise=0):
-        super().add_observation(observation, noise=noise)
-        self.estimates1 = None
-        self.estimates2 = None
-    
-    def compute_nbv(self):
-        estimates1, estimates2 = self.compute_estimates()
+    def compute_nbv(self, with_estimates=False):
         # phase 1
+        estimates1 = self.objective1(self.thetas, {
+            Objective.CONFIDENCE: self.gp,
+            Objective.OBSERVATIONS: self.observations,
+        })
         nbv_theta1 = self.thetas[np.argmax(estimates1)]
+        # phase 2
+        estimates2 = self.objective2(self.thetas, {
+            Objective.CONFIDENCE: self.gp,
+            Objective.OBSERVATIONS: self.observations,
+        })
         nbv_c1, nbv_c2 = self.objective1.get_boundary(Camera(nbv_theta1), {
             Objective.CONFIDENCE: self.gp,
             Objective.OBSERVATIONS: self.observations,
         })
         mask = is_in_range(self.thetas, (nbv_c1[0], nbv_c2[0]), mod=2*np.pi)
-        # phase 2
         nbv_theta2 = self.thetas[mask][np.argmax(estimates2[mask])]
-        return nbv_theta2
+        # return NBV and optionally estimates
+        if not with_estimates:
+            return nbv_theta2
+        else:
+            estimates2[np.logical_not(mask)] = np.nan
+            return nbv_theta2, np.array([estimates1, estimates2])
     
-    def compute_estimates(self):
-        if self.estimates1 is None:
-            self.estimates1 = self.objective1(self.thetas, {
-                Objective.CONFIDENCE: self.gp,
-                Objective.OBSERVATIONS: self.observations,
-            })
-
-        if self.estimates2 is None:
-            self.estimates2 = self.objective2(self.thetas, {
-                Objective.CONFIDENCE: self.gp,
-                Objective.OBSERVATIONS: self.observations,
-            })
-        
-        return self.estimates1, self.estimates2
-
 
 def build_algorithms(build_gp=lambda: None, object=None):
     return {
