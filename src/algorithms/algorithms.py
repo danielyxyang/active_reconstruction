@@ -15,6 +15,8 @@ from algorithms.objectives import (
 from simulation.camera import Camera
 from utils.math import is_in_range
 
+TRUE_ALGORITHM = "ObservedSurfaceMarginal"
+
 
 class Algorithm():
     """Base class for algorithms."""
@@ -126,7 +128,7 @@ class TwoPhaseAlgorithm(Algorithm):
 def build_algorithms(build_gp=lambda: None, object=None):
     return {
         # greedy algorithms + observation-based objective functions
-        "ObservedSurfaceMarginal": dict(
+        TRUE_ALGORITHM: dict(
             algorithm=GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=build_gp()),
             color="darkred",
         ),

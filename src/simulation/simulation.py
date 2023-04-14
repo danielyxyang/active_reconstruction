@@ -1,8 +1,7 @@
 import numpy as np
 
 import parameters as params
-from algorithms.algorithms import GreedyAlgorithm
-from algorithms.objectives import ObservedSurfaceMarginalObjective
+from algorithms.algorithms import build_algorithms, TRUE_ALGORITHM
 from simulation.camera import Camera
 from utils.math import setdiff2d
 
@@ -16,7 +15,7 @@ class Simulation():
 
         self.n_marginal = [] # store number of newly observed points
         self.n_marginal_opt = [] # store largest possible number of newly observed points
-        self.algorithm_opt = GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=algorithm.gp)
+        self.algorithm_opt = build_algorithms(build_gp=lambda: algorithm.gp, object=object)[TRUE_ALGORITHM]["algorithm"]
 
         self.reset()
 
