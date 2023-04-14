@@ -3,6 +3,9 @@ import numpy as np
 from algorithms.objectives import (
     Objective,
     ObservedSurfaceMarginalObjective,
+    ObservedSurfaceObjective,
+    ObservedConfidenceLowerObjective,
+    ObservedConfidenceUpperObjective,
     IntersectionOcclusionAwareObjective,
     IntersectionObjective,
     ConfidenceObjective,
@@ -131,6 +134,18 @@ def build_algorithms(build_gp=lambda: None, object=None):
         TRUE_ALGORITHM: dict(
             algorithm=GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=build_gp()),
             color="darkred",
+        ),
+        "Greedy-ObservedSurface": dict(
+            algorithm=GreedyAlgorithm(ObservedSurfaceObjective(obj=object), gp=build_gp()),
+            color="red",
+        ),
+        "Greedy-ObservedConfidenceLower": dict(
+            algorithm=GreedyAlgorithm(ObservedConfidenceLowerObjective(), gp=build_gp()),
+            color="dimgray",
+        ),
+        "Greedy-ObservedConfidenceUpper": dict(
+            algorithm=GreedyAlgorithm(ObservedConfidenceUpperObjective(), gp=build_gp()),
+            color="darkgray",
         ),
 
         # greedy algorithms + intersection-based objective functions

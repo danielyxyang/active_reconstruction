@@ -103,6 +103,33 @@ class ObservedSurfaceMarginalObjective(Objective):
         return setdiff2d(observed_points.T, observations.T).T
 
 
+class ObservedSurfaceObjective(Objective):
+    """Number of surface points on the object."""
+
+    def __init__(self, obj=None, **kwargs):
+        super().__init__(**kwargs)
+        self.obj = obj # must be set before objective is used
+    
+    def compute_estimate_points(self, camera, data):
+        return camera.compute_observation(self.obj.surface_points)
+
+
+class ObservedConfidenceLowerObjective(Objective):
+    """Number of surface points on the lower confidence bound."""
+
+    def compute_estimate_points(self, camera, data):
+        gp = data[Objective.CONFIDENCE]
+        return camera.compute_observation(gp.lower_points)
+
+
+class ObservedConfidenceUpperObjective(Objective):
+    """Number of surface points on the upper confidence bound."""
+
+    def compute_estimate_points(self, camera, data):
+        gp = data[Objective.CONFIDENCE]
+        return camera.compute_observation(gp.upper_points)
+
+
 class IntersectionOcclusionAwareObjective(Objective):
     """Number of visible pixels within intersection of FOV and confidence region."""
     
