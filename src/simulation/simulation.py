@@ -45,7 +45,7 @@ class Simulation():
         n_marginal_observation_opt = len(setdiff2d(camera_opt.observation.T, self.algorithm.observations.T))
         self.n_marginal_opt.append(n_marginal_observation_opt)
 
-        self.algorithm.add_observation(self.camera.observation, noise=params.GRID_H)
+        self.algorithm.add_observation(self.camera.observation, noise=params.OBS_NOISE)
 
     def move_camera(self, theta):
         self.camera.move(theta)

@@ -13,6 +13,4 @@ CAM_D = 10 # [m]
 CAM_FOV = 35 # [deg]
 CAM_FOV_RAD = math.radians(CAM_FOV)
 CAM_DOF = CAM_D * 1 # [m] 
-
-# other parameters
-# OUTPUT_DIR = "out"
+OBS_NOISE = 0.2 # standard deviation of observation noise
