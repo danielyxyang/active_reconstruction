@@ -68,6 +68,23 @@ class GaussianProcess():
         mean = solved @ (self.y - self.mean_func(self.x)) + self.mean_func(x_eval)
         cov = sigma22 - (solved @ sigma12)
         return mean, cov
+    
+    def sample(self, x_eval=None, interp=False, n=1):
+        """Sample functions from Gaussian process at given evaluation points."""
+        # set mean and covariance
+        if x_eval is None or interp:
+            mean, cov = self.mean, self.cov
+        else:
+            mean, cov = self.evaluate(x_eval)
+        # sample functions
+        samples = np.random.multivariate_normal(mean, cov, size=n)
+        # interpolate sample functions if necessary
+        if interp:
+            samples = np.array([
+                np.interp(x_eval, self.x_eval, samples[i], period=self.period)
+                for i in range(n)
+            ])
+        return samples
 
     def confidence_boundary(self, x_eval=None, interp=False):
         """Compute polar coordinates of the confidence boundary."""
