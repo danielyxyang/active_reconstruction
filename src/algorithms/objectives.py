@@ -63,13 +63,13 @@ class Objective():
         # duplicate lower boundary for wrap around
         if camera.theta < np.pi:
             lower = np.concatenate([  # add duplicate boundary to the left
-                (lower[0] - 2*np.pi, lower[1]),
-                (lower[0], lower[1]),
+                (gp.x_eval - 2*np.pi, lower),
+                (gp.x_eval, lower),
             ], axis=1)
         else:
             lower = np.concatenate([  # add duplicate boundary to the right
-                (lower[0], lower[1]),
-                (lower[0] + 2*np.pi, lower[1]),
+                (gp.x_eval, lower),
+                (gp.x_eval + 2*np.pi, lower),
             ], axis=1)
         # find intersection to the left (i.e. smaller polar angle)
         fov_boundary = camera.ray_f(params.CAM_FOV_RAD/2)(lower[0])
@@ -117,7 +117,7 @@ class IntersectionOcclusionAwareObjective(Objective):
         # (short-circuit) AND not occluded by lower confidence bound
         pixel_polar = pixel_polar[:, camera.is_not_occluded(pixel_polar, gp.lower_points)] # much faster to use discretized lower confidence bound
         # (short-circuit) AND in confidence region
-        (_, lower), (_, upper) = gp.confidence_boundary(pixel_polar[0], interp=True)
+        lower, upper = gp.confidence_boundary(pixel_polar[0], interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
         pixel_polar[0] %= 2*np.pi
         return pixel_polar
@@ -139,7 +139,7 @@ class IntersectionObjective(Objective):
         # keep points in FOV
         pixel_polar = pixel_polar[:, camera.is_in_FOV(pixel_polar)]
         # (short-circuit) AND in confidence region
-        (_, lower), (_, upper) = gp.confidence_boundary(pixel_polar[0], interp=True)
+        lower, upper = gp.confidence_boundary(pixel_polar[0], interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
         pixel_polar[0] %= 2*np.pi
         return pixel_polar
@@ -149,20 +149,21 @@ class IntersectionObjective(Objective):
 
         # compute summation boundary
         c1, c2 = self.get_boundary(camera, data)
+        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
-        delta_phi = lower[0, 1] - lower[0, 0] # TODO improve
-        lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
-        upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
+        delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
+        lower = lower[mask]
+        upper = upper[mask]
         # compute FOV boundary
-        phi = lower[0]
+        phi = gp.x_eval[mask]
         mask1 = is_in_range(phi, (c1[0], camera.theta), mod=2*np.pi)
         mask2 = is_in_range(phi, (camera.theta, c2[0]), mod=2*np.pi)
         fov = np.zeros_like(phi)
         fov[mask1] = camera.ray_f(params.CAM_FOV_RAD/2)(phi[mask1])
         fov[mask2] = camera.ray_f(-params.CAM_FOV_RAD/2)(phi[mask2])
         # compute number of pixels
-        estimate = np.sum(1/2 * np.maximum(np.minimum(upper[1], fov)**2 - lower[1]**2, 0) * delta_phi) / (params.GRID_H**2)
+        estimate = np.sum(1/2 * np.maximum(np.minimum(upper, fov)**2 - lower**2, 0) * delta_phi) / (params.GRID_H**2)
         return estimate
     
     def get_boundary(self, camera, data):
@@ -186,7 +187,7 @@ class ConfidenceObjective(Objective):
         # keep pixels within c1 and c2
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
         # keep pixels between upper and lower confidence bound
-        (_, lower), (_, upper) = gp.confidence_boundary(pixel_polar[0], interp=True)
+        lower, upper = gp.confidence_boundary(pixel_polar[0], interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
         pixel_polar[0] %= (2*np.pi)
         return pixel_polar
@@ -196,13 +197,14 @@ class ConfidenceObjective(Objective):
         
         # compute summation boundary
         c1, c2 = self.get_boundary(camera, data)
+        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
-        delta_phi = lower[0, 1] - lower[0, 0] # TODO improve
-        lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
-        upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
+        delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
+        lower = lower[mask]
+        upper = upper[mask]
         # compute number of pixels
-        estimate = np.sum(1/2 * (upper[1]**2 - lower[1]**2) * delta_phi) / (params.GRID_H**2)
+        estimate = np.sum(1/2 * (upper**2 - lower**2) * delta_phi) / (params.GRID_H**2)
         return estimate
 
     def get_boundary(self, camera, data):
@@ -224,7 +226,7 @@ class ConfidenceSimpleObjective(Objective):
         # keep pixels within c1 and c2
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
         # keep pixels between upper and lower confidence bound
-        (_, lower), (_, upper) = gp.confidence_boundary(pixel_polar[0], interp=True)
+        lower, upper = gp.confidence_boundary(pixel_polar[0], interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
         pixel_polar[0] %= (2*np.pi)
         return pixel_polar
@@ -234,13 +236,14 @@ class ConfidenceSimpleObjective(Objective):
 
         # compute summation boundary
         c1, c2 = self.get_boundary(camera, data)
+        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
-        delta_phi = lower[0, 1] - lower[0, 0] # TODO improve
-        lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
-        upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
+        delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
+        lower = lower[mask]
+        upper = upper[mask]
         # compute number of pixels
-        estimate = np.sum(1/2 * (upper[1]**2 - lower[1]**2) * delta_phi) / (params.GRID_H**2)
+        estimate = np.sum(1/2 * (upper**2 - lower**2) * delta_phi) / (params.GRID_H**2)
         return estimate
 
     def get_boundary(self, camera, data):
@@ -263,7 +266,7 @@ class ConfidencePolarObjective(Objective):
         # keep pixels within c1 and c2
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
         # keep pixels between upper and lower confidence bound
-        (_, lower), (_, upper) = gp.confidence_boundary(pixel_polar[0], interp=True)
+        lower, upper = gp.confidence_boundary(pixel_polar[0], interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
         pixel_polar[0] %= (2*np.pi)
         return pixel_polar
@@ -273,13 +276,14 @@ class ConfidencePolarObjective(Objective):
 
         # compute summation boundary
         c1, c2 = self.get_boundary(camera, data)
+        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
-        delta_phi = lower[0, 1] - lower[0, 0] # TODO improve
-        lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
-        upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
+        delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
+        lower = lower[mask]
+        upper = upper[mask]
         # compute number of polar pixels
-        estimate = np.sum((upper[1] - lower[1]) * delta_phi) / (params.GRID_H**2)
+        estimate = np.sum((upper - lower) * delta_phi) / (params.GRID_H**2)
         return estimate
 
     def get_boundary(self, camera, data):
@@ -297,20 +301,21 @@ class ConfidenceSimpleWeightedObjective(Objective):
 
         # compute summation boundary
         c1, c2 = self.get_boundary(camera, data)
+        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
-        delta_phi = lower[0, 1] - lower[0, 0] # TODO improve
-        lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
-        upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
+        delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
+        lower = lower[mask]
+        upper = upper[mask]
         # compute FOV boundary
-        phi = lower[0]
+        phi = gp.x_eval[mask]
         mask1 = is_in_range(phi, (c1[0], camera.theta), mod=2*np.pi)
         mask2 = is_in_range(phi, (camera.theta, c2[0]), mod=2*np.pi)
         fov = np.zeros_like(phi)
         fov[mask1] = camera.ray_f(params.CAM_FOV_RAD/2)(phi[mask1])
         fov[mask2] = camera.ray_f(-params.CAM_FOV_RAD/2)(phi[mask2])
         # compute weighted number of pixels
-        estimate = np.sum(fov/params.CAM_D * 1/2 * (upper[1]**2 - lower[1]**2) * delta_phi) / (params.GRID_H**2)
+        estimate = np.sum(fov/params.CAM_D * 1/2 * (upper**2 - lower**2) * delta_phi) / (params.GRID_H**2)
         return estimate
     
     def get_boundary(self, camera, data):
@@ -364,7 +369,7 @@ class UncertaintyObjective(Objective):
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
         # keep pixels within uncertainty at current camera location
         lower, upper = gp.confidence_boundary(camera.theta, interp=True)
-        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower[1], upper[1]))]
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
         pixel_polar[0] %= (2*np.pi)
         return pixel_polar
 
@@ -374,7 +379,7 @@ class UncertaintyObjective(Objective):
         c1, c2 = self.get_boundary(camera, data)
         # compute upper and lower boundary at current camera position
         lower, upper = gp.confidence_boundary(camera.theta, interp=True)
-        estimate = 1/2 * (c2[0] - c1[0]) * (upper[1]**2 - lower[1]**2) / (params.GRID_H**2)
+        estimate = 1/2 * (c2[0] - c1[0]) * (upper**2 - lower**2) / (params.GRID_H**2)
         return estimate
     
     def get_boundary(self, camera, data):
@@ -398,7 +403,7 @@ class UncertaintyPolarObjective(Objective):
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
         # keep pixels within uncertainty at current camera location
         lower, upper = gp.confidence_boundary(camera.theta, interp=True)
-        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower[1], upper[1]))]
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
         pixel_polar[0] %= (2*np.pi)
         return pixel_polar
 
@@ -408,7 +413,7 @@ class UncertaintyPolarObjective(Objective):
         c1, c2 = self.get_boundary(camera, data)
         # compute upper and lower boundary at current camera position
         lower, upper = gp.confidence_boundary(camera.theta, interp=True)
-        estimate = (c2[0] - c1[0]) * (upper[1] - lower[1]) / (params.GRID_H**2)
+        estimate = (c2[0] - c1[0]) * (upper - lower) / (params.GRID_H**2)
         return estimate
     
     def get_boundary(self, camera, data):

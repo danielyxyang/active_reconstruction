@@ -452,12 +452,12 @@ class Plotter():
             lower, upper = gp.confidence_boundary()
             def update_fill_between(poly_collection):
                 fig, axis = plt.subplots() # create dummy figure
-                poly_collection_new = axis.fill_between(lower[0], lower[1], upper[1])
+                poly_collection_new = axis.fill_between(gp.x_eval, lower, upper)
                 poly_collection.set_paths([path.vertices for path in poly_collection_new.get_paths()])
                 plt.close(fig)
             self.dynamic(
                 key,
-                lambda: self.axis.fill_between(lower[0], lower[1], upper[1], **kwargs),
+                lambda: self.axis.fill_between(gp.x_eval, lower, upper, **kwargs),
                 update_fill_between,
                 visible=show_confidence,
             )
@@ -467,13 +467,13 @@ class Plotter():
         kwargs = dict(color=color, linestyle="-", linewidth=1)
         lower, upper = gp.confidence_boundary()
         if self.mode == "real":
-            lower = polar_to_cartesian(*lower)
-            upper = polar_to_cartesian(*upper)
+            lower = polar_to_cartesian(gp.x_eval, lower)
+            upper = polar_to_cartesian(gp.x_eval, upper)
             self.dynamic_plot(key + "_lower", *lower, **kwargs, visible=show_boundary)
             self.dynamic_plot(key + "_upper", *upper, **kwargs, visible=show_boundary)
         elif self.mode == "polar":
-            self.dynamic_plot(key + "_lower", *lower, **kwargs, visible=show_boundary)
-            self.dynamic_plot(key + "_upper", *upper, **kwargs, visible=show_boundary)
+            self.dynamic_plot(key + "_lower", gp.x_eval, lower, **kwargs, visible=show_boundary)
+            self.dynamic_plot(key + "_upper", gp.x_eval, upper, **kwargs, visible=show_boundary)
         
         # plot discretization points of confidence bounds
         key = "plot_confidence:{}:points".format(name)

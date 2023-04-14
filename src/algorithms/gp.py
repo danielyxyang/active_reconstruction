@@ -73,7 +73,6 @@ class GaussianProcess():
         """Compute polar coordinates of the confidence boundary."""
         # set mean and covariance
         if x_eval is None or interp:
-            x_eval = self.x_eval if not interp else x_eval
             mean, cov = self.mean, self.cov
         else:
             mean, cov = self.evaluate(x_eval)
@@ -85,7 +84,7 @@ class GaussianProcess():
         if interp:
             lower = np.interp(x_eval, self.x_eval, lower, period=self.period)
             upper = np.interp(x_eval, self.x_eval, upper, period=self.period)
-        return np.array([x_eval, lower]), np.array([x_eval, upper])
+        return lower, upper
 
     def confidence_region(self):
         """Compute cartesian coordinates of polygon vertices describing the confidence region.
@@ -93,8 +92,8 @@ class GaussianProcess():
         Note: The returned polygon vertices are not "well-defined" along the positive
         x-axis to ensure it forms a single closed polygon."""
         lower, upper = self.confidence_boundary()
-        lower_x, lower_y = polar_to_cartesian(*lower)
-        upper_x, upper_y = polar_to_cartesian(*upper)
+        lower_x, lower_y = polar_to_cartesian(self.x_eval, lower)
+        upper_x, upper_y = polar_to_cartesian(self.x_eval, upper)
         return np.concatenate([
             (upper_x, upper_y),
             (lower_x[::-1], lower_y[::-1]),
@@ -106,18 +105,18 @@ class GaussianProcess():
         """Compute polar coordinates of points on lower and upper confidence bound in each pixel."""
         with self.profiler.cm("discretization (GP)"):
             lower, upper = self.confidence_boundary()
-            _, lower_pixel_indices = np.unique(polar_to_pixel(*lower), return_index=True, axis=1)
-            _, upper_pixel_indices = np.unique(polar_to_pixel(*upper), return_index=True, axis=1)
+            _, lower_pixel_indices = np.unique(polar_to_pixel(self.x_eval, lower), return_index=True, axis=1)
+            _, upper_pixel_indices = np.unique(polar_to_pixel(self.x_eval, upper), return_index=True, axis=1)
             lower_pixel_indices = np.sort(lower_pixel_indices)
             upper_pixel_indices = np.sort(upper_pixel_indices)
-            self.lower_points = lower[:, lower_pixel_indices]
-            self.upper_points = upper[:, upper_pixel_indices]
+            self.lower_points = np.array([self.x_eval, lower])[:, lower_pixel_indices]
+            self.upper_points = np.array([self.x_eval, upper])[:, upper_pixel_indices]
             
-            # check if evaluation of GP is fine enough for discretization
+            # check if evaluation of GP is fine enough for discretization (mostly just required for interpolation)
             n_lower_points = len(self.lower_points.T)
             n_upper_points = len(self.upper_points.T)
             n_samples = len(self.x_eval)
-            if max(n_lower_points, n_upper_points) > 0.5 * n_samples:
+            if max(n_lower_points, n_upper_points) > 0.8 * n_samples:
                 print("WARNING: consider increasing number of samples for discretizing GP confidence bounds ({} lower pixels, {} upper pixels, {} discretization samples)".format(n_lower_points, n_upper_points, n_samples))
     
 
