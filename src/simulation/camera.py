@@ -21,10 +21,12 @@ class Camera():
         
         The zero polar angle in the camera coordinate system is aligned with
         the line of sight of the camera."""
-        A = np.sin(phi - self.theta) * r
-        B = np.cos(phi - self.theta) * r
-        beta = -np.arctan2(A, params.CAM_D - B)
-        d = np.sqrt(A ** 2 + (params.CAM_D - B) ** 2)
+        # world polar -> camera cartesian
+        xc = params.CAM_D - r * np.cos(self.theta - phi)
+        yc = r * np.sin(self.theta - phi)
+        # camera cartesian -> camera polar
+        beta = np.arctan2(yc, xc)
+        d = np.sqrt(yc ** 2 + xc ** 2)
         # TODO draft
         # los = self.theta + np.pi
         # x, y = (polar_to_cartesian(phi, r).T - polar_to_cartesian(self.theta, params.CAM_D)).T
@@ -36,10 +38,12 @@ class Camera():
         
         The zero polar angle in the camera coordinate system is aligned with
         the line of sight of the camera."""
-        A = np.sin(-beta) * d
-        B = params.CAM_D - np.cos(-beta) * d
-        phi = np.arctan2(A, B) + self.theta
-        r = np.sqrt(A ** 2 + B ** 2)
+        # camera polar -> "world" cartesian (rotated by theta)
+        xc = params.CAM_D - d * np.cos(-beta)
+        yc = d * np.sin(-beta)
+        # "world" cartesian (rotated by theta) -> world polar
+        phi = np.arctan2(yc, xc) + self.theta
+        r = np.sqrt(yc ** 2 + xc ** 2)
         # TODO draft
         # los = self.theta + np.pi
         # x, y = (polar_to_cartesian(beta + los, d).T + polar_to_cartesian(self.theta, params.CAM_D)).T
