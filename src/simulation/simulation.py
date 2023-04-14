@@ -51,8 +51,9 @@ class Simulation():
         self.camera.move(theta)
         self.camera.observe(self.obj.surface_points)
 
-    def step(self):
-        nbv = self.algorithm.compute_nbv()
+    def step(self, nbv=None):
+        if nbv is None:
+            nbv = self.algorithm.compute_nbv()
         self.move_camera(nbv)
         self.take_measurement()
 
