@@ -183,7 +183,7 @@ class KernelSelector(widgets.VBox, widgets.widget_description.DescriptionWidget,
 class CheckboxList(widgets.VBox, widgets.widget_description.DescriptionWidget, widgets.ValueWidget):
     value = Any(help="Selected checkboxes")
 
-    def __init__(self, options, value=[], description=None, **kwargs):
+    def __init__(self, options, value=[], colors={}, description=None, **kwargs):
         self.options = options
         self.checkboxes = {}
         # create description label
@@ -192,6 +192,7 @@ class CheckboxList(widgets.VBox, widgets.widget_description.DescriptionWidget, w
         for name in options:
             # value = value[name] if name in value.keys() else True
             self.checkboxes[name] = widgets.Checkbox(value=name in value, indent=False, layout=widgets.Layout(width="auto", margin="0 0 0 20px"), description=name) 
+            self.checkboxes[name].style.background = colors.get(name, "")
         checkbox_list = [widgets.VBox([self.checkboxes[name] for name in options], **kwargs)]
         # register handler to update widget value
         for checkbox in self.checkboxes.values():
