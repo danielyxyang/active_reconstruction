@@ -10,11 +10,13 @@ from utils.tools import Profiler
 class GaussianProcess():
     # reference: https://peterroelants.github.io/posts/gaussian-process-tutorial/
     
-    def __init__(self, mean_func, kernel_func, n_std=2, n=1000, discretize=False):
+    def __init__(self, mean_func, kernel_func, x_eval=None, period=2*np.pi, n_std=2, discretize=False):
         self.mean_func = mean_func
         self.kernel_func = kernel_func
         self.n_std = n_std # number of standard deviations for confidence bound
-        self.x_eval = np.linspace(0, 2*np.pi, n)
+        self.x_eval = x_eval if x_eval is not None else np.linspace(0, 2*np.pi, 1000)
+        self.period = period
+        
         self.x = None
         self.y = None
         self.noise = None
@@ -70,22 +72,19 @@ class GaussianProcess():
     def confidence_boundary(self, x_eval=None, interp=False):
         """Compute polar coordinates of the confidence boundary."""
         # set mean and covariance
-        if x_eval is None:
-            x_eval = self.x_eval
+        if x_eval is None or interp:
+            x_eval = self.x_eval if not interp else x_eval
             mean, cov = self.mean, self.cov
         else:
-            if interp:
-                mean, cov = self.mean, self.cov
-            else:
-                mean, cov = self.evaluate(x_eval)
+            mean, cov = self.evaluate(x_eval)
         # compute upper and lower confidence bound
         std = np.sqrt(np.diag(cov))
         lower = mean - self.n_std * std
         upper = mean + self.n_std * std
         # interpolate upper and lower confidence bound if necessary
-        if x_eval is not None and interp:
-            lower = np.interp(x_eval, self.x_eval, lower, period=2*np.pi)
-            upper = np.interp(x_eval, self.x_eval, upper, period=2*np.pi)
+        if interp:
+            lower = np.interp(x_eval, self.x_eval, lower, period=self.period)
+            upper = np.interp(x_eval, self.x_eval, upper, period=self.period)
         return np.array([x_eval, lower]), np.array([x_eval, upper])
 
     def confidence_region(self):
