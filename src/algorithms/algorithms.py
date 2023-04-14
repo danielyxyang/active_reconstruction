@@ -15,7 +15,7 @@ from algorithms.objectives import (
 from simulation.camera import Camera
 from utils.math import is_in_range
 
-TRUE_ALGORITHM = "ObservedSurfaceMarginal"
+TRUE_ALGORITHM = "Greedy-ObservedSurfaceMarginal"
 
 
 class Algorithm():
@@ -134,63 +134,63 @@ def build_algorithms(build_gp=lambda: None, object=None):
         ),
 
         # greedy algorithms + intersection-based objective functions
-        "IntersectionOcclusionAware": dict(
+        "Greedy-IntersectionOcclusionAware": dict(
             algorithm=GreedyAlgorithm(IntersectionOcclusionAwareObjective(), gp=build_gp()),
             color="lime",
         ),
-        "Intersection": dict(
+        "Greedy-Intersection": dict(
             algorithm=GreedyAlgorithm(IntersectionObjective(), gp=build_gp()),
             color="limegreen",
         ),
-        "Intersection_cf": dict(
+        "Greedy-Intersection_cf": dict(
             algorithm=GreedyAlgorithm(IntersectionObjective(use_cf=True), gp=build_gp()),
             color="limegreen",
         ),
 
         # greedy algorithms + confidence-based objective functions
-        "Confidence": dict(
+        "Greedy-Confidence": dict(
             algorithm=GreedyAlgorithm(ConfidenceObjective(), gp=build_gp()),
             color="orange",
         ),
-        "Confidence_cf": dict(
+        "Greedy-Confidence_cf": dict(
             algorithm=GreedyAlgorithm(ConfidenceObjective(use_cf=True), gp=build_gp()),
             color="orange",
         ),
-        "ConfidenceSimple": dict(
+        "Greedy-ConfidenceSimple": dict(
             algorithm=GreedyAlgorithm(ConfidenceSimpleObjective(), gp=build_gp()),
             color="darkorange",
         ),
-        "ConfidenceSimple_cf": dict(
+        "Greedy-ConfidenceSimple_cf": dict(
             algorithm=GreedyAlgorithm(ConfidenceSimpleObjective(use_cf=True), gp=build_gp()),
             color="darkorange",
         ),
-        "ConfidenceSimplePolar": dict(
+        "Greedy-ConfidenceSimplePolar": dict(
             algorithm=GreedyAlgorithm(ConfidencePolarObjective(), gp=build_gp()),
             color="gold",
         ),
-        "ConfidenceSimplePolar_cf": dict(
+        "Greedy-ConfidenceSimplePolar_cf": dict(
             algorithm=GreedyAlgorithm(ConfidencePolarObjective(use_cf=True), gp=build_gp()),
             color="gold",
         ),
-        "ConfidenceSimpleWeighted_cf": dict(
+        "Greedy-ConfidenceSimpleWeighted_cf": dict(
             algorithm=GreedyAlgorithm(ConfidenceSimpleWeightedObjective(use_cf=True), gp=build_gp()),
             color="goldenrod",
         ),
 
         # greedy algorithms + uncertainty-based objective functions
-        "Uncertainty": dict(
+        "Greedy-Uncertainty": dict(
             algorithm=GreedyAlgorithm(UncertaintyObjective(), gp=build_gp()),
             color="steelblue",
         ),
-        "Uncertainty_cf": dict(
+        "Greedy-Uncertainty_cf": dict(
             algorithm=GreedyAlgorithm(UncertaintyObjective(use_cf=True), gp=build_gp()),
             color="steelblue",
         ),
-        "UncertaintyPolar": dict(
+        "Greedy-UncertaintyPolar": dict(
             algorithm=GreedyAlgorithm(UncertaintyPolarObjective(), gp=build_gp()),
             color="deepskyblue",
         ),
-        "UncertaintyPolar_cf": dict(
+        "Greedy-UncertaintyPolar_cf": dict(
             algorithm=GreedyAlgorithm(UncertaintyPolarObjective(use_cf=True), gp=build_gp()),
             color="deepskyblue",
         ),
