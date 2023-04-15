@@ -7,13 +7,15 @@ from collections import UserDict
 
 
 class Profiler():
+    """Class for profiling execution time of code."""
+
     def __init__(self):
         # simple profiling
         self._start = None
         self._end = None
         # named profiling
         self._records = {}
-        self.__names_context = [] # stack storing names of non-nested records for nested profiling contextmanagers
+        self.__names_context = [] # stack storing names of disjoint records for nested profiling contextmanagers
 
     def start(self, name=None):
         """Start timer of profiler."""
@@ -109,13 +111,13 @@ class Profiler():
         print("  {:{}} {}".format("Total:", max_length + 1, "{:4.2f}s".format(total)))
         
     @contextlib.contextmanager
-    def cm(self, name=None, nested=False):
+    def cm(self, name=None, disjoint=False):
         """Create context manager for profiling.
         
         Args:
-            name: name of the profiling session
-            nested: flag whether recorded time should be nested or disjoint from other times
-                recorded with context manager"""
+            name (str): Name of the profiling session.
+            disjoint (bool): Flag whether recorded time should be disjoint from
+                other times recorded with context manager. Defaults to False."""
         if name is None:
             # simple profiling
             self.start()
@@ -131,7 +133,7 @@ class Profiler():
                 self.stop(name=name_prev)
                 self.save(name_prev)
             # start this session
-            if not nested:
+            if disjoint:
                 self.__names_context.append(name)
             self.start(name=name)
             try:
@@ -140,7 +142,7 @@ class Profiler():
                 # stop this session
                 self.stop(name=name)
                 self.save(name)
-                if not nested:
+                if disjoint:
                     self.__names_context.pop()
                 # start previous session
                 if len(self.__names_context) > 0:
@@ -149,6 +151,7 @@ class Profiler():
 
 
 class LoopChecker():
+    """Class for checking loops on non-termination."""
     def __init__(self, location=None, threshold=1e6):
         self.location = location
         self.threshold = int(threshold)
@@ -161,6 +164,7 @@ class LoopChecker():
 
 
 class LazyDict(UserDict):
+    """Class for lazily evaluating function items of dict on first access."""
     def __getitem__(self, key):
         if isinstance(self.data[key], types.FunctionType):
             self.data[key] = self.data[key]()
@@ -168,10 +172,7 @@ class LazyDict(UserDict):
 
 
 def build_json_encoder(encoders=[]):
-    """
-    Encode common non-serializable types into serializable ones with the help of
-    the additional list of encoders.
-    """
+    """Encode common non-serializable types into serializable ones."""
     def encoder(obj):
         if isinstance(obj, np.integer):
             return int(obj)

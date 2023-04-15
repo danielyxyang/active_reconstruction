@@ -15,8 +15,9 @@ class Object():
         polar angles in the range [0,2pi) is passed as an argument.
 
         Args:
-            obj_f: function returning radial distances for given polar angles
-            args: keyword arguments used to build this object
+            obj_f (func): Polar function describing object surface.
+            args (dict): Keyword arguments for building this object and stored
+                when serializing object.
         """
         self.profiler = Profiler()
 
@@ -31,9 +32,11 @@ class Object():
     def build(cls, *args, **kwargs):
         """Build object with function instead of constructor call.
         
-        Note: This function is used to interactively construct objects using ipywidgets."""
+        This function is used to interactively construct objects using
+        ipywidgets.
+        """
         return cls(*args, **kwargs)
-
+    
     def __str__(self):
         return self.obj_name + "".join(["_{}{}".format(name[0], int(arg) if arg % 1 < 1e-6 else arg) for name, arg in self.args.items()])
     
@@ -102,7 +105,7 @@ class Object():
             self.profiler.set_info("discretization (object)", "{:3.1f} iterations".format(np.mean(n_iters)))
 
     def __find_phi(self, phi, d_phi=1, target_mode="this", alpha=0.1, max_iter=25):
-        """TODO"""
+        """Search for polar coordinate of surface point in next neighbor pixel."""
 
         # initialize target pixels
         px, py = self.pc(phi)
@@ -170,8 +173,8 @@ class Object():
         """Return polar function parameterizing line going through the given points.
         
         Args:
-            p1: polar coordinate of first point
-            p2: polar coordinate of second point
+            p1 (2 array): Polar coordinate of first point.
+            p2 (2 array): Polar coordinate of second point.
         """
         # sort points with increasing polar angle
         if p1[0] > p2[0]:
@@ -205,8 +208,10 @@ class EllipseObject(Object):
         """Return object with the shape of an ellipse using a linear function.
         
         Args:
-            a: semi-major axis aligned with x-axis (defaults to average of object bounds)
-            b: semi-minor axis aligned with y-axis (defaults to average of object bounds)
+            a (scalar): Semi-major axis aligned with x-axis. Defaults to average
+                of object bounds.
+            b (scalar): Semi-minor axis aligned with y-axis. Defaults to average
+                of object bounds.
         """
         a = params.OBJ_D_AVG() if a is None else a
         a = np.clip(a, params.OBJ_D_MIN, params.OBJ_D_MAX)
@@ -225,7 +230,8 @@ class SquareObject(Object):
         """Return object with the shape of a square using a piecewise function.
         
         Args:
-            width: width (defaults to twice the average of object bounds)
+            width (scalar): Width. Defaults to twice the average of object
+                bounds.
         """
         width = 2*params.OBJ_D_AVG() if width is None else width
         width = np.clip(width, 2 * params.OBJ_D_MIN, 2 * params.OBJ_D_MAX / np.sqrt(2))
@@ -243,8 +249,9 @@ class FlowerObject(Object):
         """Return object with the shape of a flower using a cosine function.
     
         Args:
-            amplitude: amplitude (defaults to halfway between object bounds)
-            frequency: integer-valued frequency
+            amplitude (scalar): Amplitude. Defaults to halfway between object
+                bounds.
+            frequency (int): Frequency
         """
         amplitude = (params.OBJ_D_MAX - params.OBJ_D_MIN) / 2 if amplitude is None else amplitude
         amplitude = np.clip(amplitude, 0, (params.OBJ_D_MAX - params.OBJ_D_MIN) / 2)
@@ -262,14 +269,16 @@ class PolygonObject(Object):
 
     def __init__(self, vertices, name=None, **kwargs):
         """Return object with the shape of a polygon.
+
+        The given list of vertices must be sorted by the polar angles and must
+        only contain polar angles in [0, 2pi).
         
         Args:
-            vertices: list of polar coordinates of the vertices
-            name: name used to uniquely identify polygon 
+            vertices (Nx2 array): Polar coordinates of the vertices.
+            name (string): Name used to uniquely identify polygon.
         """
         args = dict(vertices=vertices, name=name)
 
-        # TODO add sanity checks (e.g. vertices sorted by phi, no duplicates and also no 0 and 2pi)
         # extend list of vertices with wrap-around to cover [0,...] and [...,2pi]
         vertices = np.asarray(vertices)
         vertices = np.concatenate((

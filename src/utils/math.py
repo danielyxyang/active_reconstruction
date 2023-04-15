@@ -3,7 +3,7 @@ import numpy as np
 import parameters as params
 
 
-# MATH FUNCTIONS
+# COORDINATE TRANSFORMATION FUNCTIONS
 
 def polar_to_cartesian(phi, r):
     """Convert polar coordinates to cartesian coordinates."""
@@ -26,7 +26,8 @@ def cartesian_to_pixel(x, y):
     to the nearest even value, the vertical grid edges are implicitly
     mapped to the incident pixel to the left or right with even 
     x-coordinate and the horizontal grid edges are mapped to the incident
-    pixel above or below with even y-coordinate."""
+    pixel above or below with even y-coordinate.
+    """
     px = np.around(x / params.GRID_H)
     py = np.around(y / params.GRID_H)
     return np.array([px, py], dtype=int)
@@ -44,7 +45,7 @@ def polar_to_pixel(phi, r):
     return np.array([px, py], dtype=int)
 
 
-# NUMPY FUNCTIONS
+# OTHER FUNCTIONS
 
 def setdiff2d(a, b):
     """Compute set difference between two 2D lists."""
@@ -73,8 +74,9 @@ def intersect_functions(f1, f2, mode="left"):
     """Compute list of indices of the intersection points of two functions.
     
     The intersection points are computed by finding the zero-crossings of the
-    difference of f1 and f2. Under mode "left" the point to the left of the
-    intersection point is returned and under mode "right" vice versa."""
+    difference of f1 and f2. Using "left" the point to the left of the
+    intersection point is returned and using "right" the point to the right.
+    """
     if mode == "left":
         offset = 0
     elif mode == "right":

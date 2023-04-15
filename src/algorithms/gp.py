@@ -8,14 +8,12 @@ from utils.tools import Profiler
 
 
 class GaussianProcess():
-    # reference: https://peterroelants.github.io/posts/gaussian-process-tutorial/
-    
     def __init__(self, mean_func, kernel_func, x_eval=None, period=2*np.pi, n_std=2, discretize=False):
         self.mean_func = mean_func
         self.kernel_func = kernel_func
-        self.n_std = n_std # number of standard deviations for confidence bound
         self.x_eval = x_eval if x_eval is not None else np.linspace(0, 2*np.pi, 1000)
         self.period = period
+        self.n_std = n_std # number of standard deviations for confidence bound
         
         self.x = None
         self.y = None
@@ -31,6 +29,7 @@ class GaussianProcess():
         self.reset()
 
     def reset(self):
+        """Reset Gaussian process to prior."""
         # reset observations
         self.x = np.array([])
         self.y = np.array([])
@@ -42,6 +41,7 @@ class GaussianProcess():
             self.__discretize()
 
     def update(self, x1, y1, noise=0):
+        """Update Gaussian process with observations to posterior."""
         if np.isscalar(noise):
             noise = np.full_like(x1, noise)
         # add observations
@@ -59,6 +59,7 @@ class GaussianProcess():
         if x_eval is None:
             x_eval = self.x_eval
         # compute posterior mean and covariance
+        # reference: https://peterroelants.github.io/posts/gaussian-process-tutorial/
         noise = (self.noise ** 2) * np.eye(len(self.x))
         sigma11 = self.kernel_func(self.x[:, np.newaxis], self.x[:, np.newaxis]) + noise
         sigma12 = self.kernel_func(self.x[:, np.newaxis], x_eval[:, np.newaxis])
@@ -107,7 +108,8 @@ class GaussianProcess():
         """Compute cartesian coordinates of polygon vertices describing the confidence region.
         
         Note: The returned polygon vertices are not "well-defined" along the positive
-        x-axis to ensure it forms a single closed polygon."""
+        x-axis to ensure it forms a single closed polygon.
+        """
         lower, upper = self.confidence_boundary()
         lower_x, lower_y = polar_to_cartesian(self.x_eval, lower)
         upper_x, upper_y = polar_to_cartesian(self.x_eval, upper)

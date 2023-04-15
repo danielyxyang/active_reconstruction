@@ -27,11 +27,18 @@ class Algorithm():
     """Base class for algorithms."""
     
     def __init__(self, gp=None):
+        """Construct instance of algorithm.
+
+        Args:
+            gp (GaussianProcess, optional): Instance of Gaussian process model.
+                Defaults to None.
+        """
         self.observations = Observations()
         self.gp = gp
         self.linked = False
 
     def reset(self):
+        """Reset knowledge of algorithm."""
         if self.linked:
             print("WARNING: not possible to reset linked algorithm")
             return
@@ -39,6 +46,13 @@ class Algorithm():
         self.gp.reset()
 
     def add_observation(self, observation, noise=0):
+        """Update knowledge of algorithm through measurement.
+
+        Args:
+            observation (2xN array): Polar coordinates of measurements
+            noise (scalar or N array, optional): Uniform noise if scalar or
+                noise per measurement if array. Defaults to 0.
+        """
         if self.linked:
             print("WARNING: not possible to add observations to linked algorithm")
             return
@@ -46,18 +60,32 @@ class Algorithm():
         self.gp.update(*observation, noise=noise)
 
     def compute_nbv(self):
+        """Compute NBV based on knowledge of algorithm.
+
+        Returns:
+            float: Polar angle describing NBV.
+        """        
         return 0
     
     @property
     def data(self):
+        """Knowledge of algorithm obtained through previous measurements."""
         return {
             Objective.CONFIDENCE: self.gp,
             Objective.OBSERVATIONS: self.observations,
         }
 
-    # HELPER METHODS
-
     def link(self, algorithm):
+        """Link knowledge of algorithm with another algorithm.
+        
+        This method is useful when simulating multiple algorithms simultaneously
+        and allows knowledge propagation from a main algorithm to others. Linked
+        algorithms are therefore not allowed to modify the linked knowledge of
+        the main algorithm.
+
+        Args:
+            algorithm (Algorithm): Instance of algorithm.
+        """
         self.observations = algorithm.observations
         self.gp = algorithm.gp
         self.linked = True
@@ -72,6 +100,16 @@ class GreedyAlgorithm(Algorithm):
         self.thetas = np.linspace(0, 2*np.pi, num=n)
 
     def compute_nbv(self, with_estimates=False):
+        """Compute NBV based on knowledge of algorithm.
+
+        Args:
+            with_estimates (bool, optional): Flag whether computed global
+                estimates should be returned or not. Defaults to False.
+
+        Returns:
+            float or (float, N array): Polar coordinate of NBV and optionally
+                list of number of estimated points from N camera locations.
+        """
         # find NBV
         estimates = self.objective(self.thetas, self.data)
         nbv = self.thetas[np.argmax(estimates)]
@@ -82,6 +120,17 @@ class GreedyAlgorithm(Algorithm):
             return nbv, estimates
     
     def compute_estimate_points(self, camera):
+        """Compute points estimated to be observed from current camera location.
+
+        This only works with numerical objective functions, while closed-form
+        objective functions will print a warning.
+
+        Args:
+            camera (Camera): Instance of camera.
+
+        Returns:
+            2xN array: Polar coordinates of estimated points.
+        """        
         return self.objective.compute_estimate_points(camera, self.data)
 
 
@@ -89,7 +138,8 @@ class TwoPhaseAlgorithm(Algorithm):
     """Class for greedy 2-phase algorithms.
     
     Phase 1: finding two boundaries maximizing objective 1
-    Phase 2: finding NBV within boundaries maximizing objective 2."""
+    Phase 2: finding NBV within boundaries maximizing objective 2.
+    """
 
     def __init__(self, objective1, objective2, n=100, **kwargs):
         super().__init__(**kwargs)
@@ -98,6 +148,17 @@ class TwoPhaseAlgorithm(Algorithm):
         self.thetas = np.linspace(0, 2*np.pi, num=n)
 
     def compute_nbv(self, with_estimates=False):
+        """Compute NBV based on knowledge of algorithm.
+
+        Args:
+            with_estimates (bool, optional): Flag whether computed global
+                estimates should be returned or not. Defaults to False.
+
+        Returns:
+            float or (float, 2xN array): Polar coordinate of NBV and optionally
+               list of number of estimated points from phase 1 objective and
+               phase 2 objective from N camera locations.
+        """
         # phase 1
         estimates1 = self.objective1(self.thetas, self.data)
         nbv1 = self.thetas[np.argmax(estimates1)]

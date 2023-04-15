@@ -42,6 +42,7 @@ class Objective():
     
     @staticmethod
     def get_candidate_pixels(xlim=None, ylim = None):
+        """Return cartesian coordinates of candidate pixels for numerical objective functions."""
         # possible that GP is slightly outside of OBJ_D_MAX, but we assume it stays inside CAM_D
         if xlim is None:
             xlim = (-params.CAM_D, params.CAM_D)
@@ -58,6 +59,7 @@ class Objective():
 
     @staticmethod
     def get_FOV_confidence_intersection(camera, gp):
+        """Return boundaries of FOV-confidence intersection summation interval."""
         # compute intersections of FOV boundary and lower confidence bound
         lower, _ = gp.confidence_boundary()
         # duplicate lower boundary for wrap around
@@ -89,13 +91,14 @@ class Objective():
     
     @staticmethod
     def get_simple_FOV_endpoint(camera):
+        """Return boundaries of simple FOV endpoint summation interval"""
         phi1 = camera.camera_to_polar(params.CAM_FOV/2, params.CAM_DOF)
         phi2 = camera.camera_to_polar(-params.CAM_FOV/2, params.CAM_DOF)
         return phi1, phi2
 
 
 class ObservedSurfaceMarginalObjective(Objective):
-    """Number of surface points on the object have not previously been observed."""
+    """Number of newly observed surface points on the object."""
 
     def __init__(self, obj=None, **kwargs):
         super().__init__(**kwargs)
@@ -110,7 +113,7 @@ class ObservedSurfaceMarginalObjective(Objective):
 
 
 class ObservedSurfaceObjective(Objective):
-    """Number of surface points on the object."""
+    """Number of observed surface points on the object."""
 
     def __init__(self, obj=None, **kwargs):
         super().__init__(**kwargs)
@@ -121,7 +124,7 @@ class ObservedSurfaceObjective(Objective):
 
 
 class ObservedConfidenceLowerObjective(Objective):
-    """Number of surface points on the lower confidence bound."""
+    """Number of observed surface points on the lower confidence bound."""
 
     def compute_estimate_points(self, camera, data):
         gp = data[Objective.CONFIDENCE]
@@ -129,7 +132,7 @@ class ObservedConfidenceLowerObjective(Objective):
 
 
 class ObservedConfidenceUpperObjective(Objective):
-    """Number of surface points on the upper confidence bound."""
+    """Number of observed surface points on the upper confidence bound."""
 
     def compute_estimate_points(self, camera, data):
         gp = data[Objective.CONFIDENCE]
@@ -204,8 +207,7 @@ class IntersectionObjective(Objective):
 
 
 class ConfidenceObjective(Objective):
-    """Number of pixels within confidence region bounded by intersection points of FOV
-    with confidence region."""
+    """Number of pixels within confidence region bounded by intersection points of FOV with confidence region."""
 
     def compute_estimate_points(self, camera, data):
         gp = data[Objective.CONFIDENCE]
@@ -320,8 +322,7 @@ class ConfidencePolarObjective(Objective):
 
 
 class ConfidenceSimpleWeightedObjective(Objective):
-    """Number of pixels within confidence region bounded by endpoints of FOV and weighted by
-    `FOV(phi) / CAM_D`."""
+    """Number of pixels within confidence region bounded by endpoints of FOV and weighted by `FOV(phi) / CAM_D`."""
 
     def compute_estimate_cf(self, camera, data):
         gp = data[Objective.CONFIDENCE]
@@ -418,12 +419,10 @@ class UncertaintyPolarObjective(Objective):
 
 #     def compute_estimate_points(self, camera, data):
 #         gp = data[Objective.CONFIDENCE]
-        
 #         return None
     
 #     def compute_estimate_cf(self, camera, data):
 #         gp = data[Objective.CONFIDENCE]
-
 #         return None
     
 #     def get_summation_interval(self, camera, data):

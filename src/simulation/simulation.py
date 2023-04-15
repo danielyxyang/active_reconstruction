@@ -24,6 +24,7 @@ class Simulation():
     # LOW-LEVEL METHODS TO RUN SIMULATION
 
     def reset(self):
+        """Reset state of simulation."""
         self.algorithm.reset()
         self.camera.observe(self.obj.surface_points)
         self.converged = False
@@ -32,6 +33,7 @@ class Simulation():
         self.n_marginal_opt = []
 
     def take_measurement(self):
+        """Add current observations of camera to knowledge of algorithm."""
         # compute number of marginal observations
         n_marginal_observation = len(setdiff2d(self.camera.observation.T, self.algorithm.observations.observed_points.T))
         if n_marginal_observation == 0:
@@ -45,24 +47,29 @@ class Simulation():
         n_marginal_observation_opt = len(setdiff2d(camera_opt.observation.T, self.algorithm.observations.observed_points.T))
         self.n_marginal_opt.append(n_marginal_observation_opt)
 
+        # add observations to algorithm 
         self.algorithm.add_observation(self.camera.observation, noise=params.OBS_NOISE)
 
     def move_camera(self, theta):
+        """Move camera to given position and update observations of camera."""
         self.camera.move(theta)
         self.camera.observe(self.obj.surface_points)
 
     def is_converged(self):
+        """Return flag indicating convergence defined as no new observations."""
         return self.converged
 
     # HIGH-LEVEL METHODS TO RUN SIMULATION
 
     def step(self, nbv=None):
+        """Move camera to NBV or given position and take measurement."""
         if nbv is None:
             nbv = self.algorithm.compute_nbv()
         self.move_camera(nbv)
         self.take_measurement()
     
     def run(self, thetas=None, n=None):
+        """Run simulation with the given positions or n times the NBV."""
         if thetas is not None:
             for theta in thetas:
                 self.step(nbv=theta)
@@ -75,9 +82,11 @@ class Simulation():
     # METHODS TO EVALUATE SIMULATION
 
     def progress(self):
+        """Return relative amount of reconstructed object."""
         return np.sum(self.n_marginal) / len(self.obj.surface_points.T)
     
     def results(self):
+        """Return SimulationResults object for evaluating simulation."""
         return SimulationResults(self.n_marginal, self.n_marginal_opt, len(self.obj.surface_points.T))
 
     # STATIC METHODS
@@ -120,39 +129,51 @@ class SimulationResults():
 
     @property
     def n_measurements(self):
+        """Number of measurements."""
         return len(self.n_marginal)
     def n_measurements_upto_thresh(self, thresh):
+        """Number of measurements up to relative reconstruction above thresh."""
         return self._nan_if_empty(np.min, self.rounds[self.n_total_rel >= thresh])
     @property
     def rounds(self):
+        """List of rounds."""
         return np.arange(1, self.n_measurements + 1)
     
     @property
     def n_total(self):
+        """List of number of observed surface points."""
         return np.cumsum(self.n_marginal)
     @property
     def n_total_rel(self):
+        """List of relative number of observed surface points."""
         return self.n_total / self.n_max
     @property
     def n_total_final(self):
+        """Total number of observed surface points."""
         return self.n_total[-1] if self.n_measurements > 0 else 0
     @property
     def n_total_final_rel(self):
+        """Relative number of observed surface points."""
         return self.n_total_final / self.n_max
     @property
     def n_remaining(self):
+        """Total number of unobserved surface points."""
         return self.n_max - self.n_total_final
     
     @property
     def regret(self):
+        """List of simple individual regret."""
         return self.n_marginal_opt - self.n_marginal
     @property
     def regret_avg(self):
+        """Average of simple individual regret."""
         return self._nan_if_empty(np.mean, self.regret)
     @property
     def regret_max(self):
+        """Maximum simple individual regret."""
         return self._nan_if_empty(np.max, self.regret)
     @property
     def regret_min(self):
+        """Minimum simple individual regret."""
         return self._nan_if_empty(np.min, self.regret)
 

@@ -8,46 +8,46 @@ from matplotlib.patches import Circle, Rectangle, Wedge, Polygon
 import parameters as params
 from algorithms.algorithms import TRUE_ALGORITHM
 from utils.math import polar_to_cartesian, cartesian_to_polar, polar_to_pixel
-from utils.plotting import InteractivePlotter, MultipleTicks
+from utils.plotting import DynamicPlotter, MultipleTicks
 
 WORLD_COLORS = {
-    "grid": "gray",
-    "camera": "blue",
-    "object": "red",
-    "confidence": "gray",
+    "grid":             "gray",
+    "camera":           "blue",
+    "object":           "red",
+    "confidence":       "gray",
     "confidence_lower": "dimgray",
     "confidence_upper": "darkgray",
 }
 
 ALGORITHM_COLORS = {
     # greedy algorithm, observation-based objective function
-    TRUE_ALGORITHM:                   "darkred",
-    "Greedy-ObservedSurface":         WORLD_COLORS["object"],
-    "Greedy-ObservedConfidenceLower": WORLD_COLORS["confidence_lower"],
-    "Greedy-ObservedConfidenceUpper": WORLD_COLORS["confidence_upper"],
+    TRUE_ALGORITHM:                          "darkred",
+    "Greedy-ObservedSurface":                WORLD_COLORS["object"],
+    "Greedy-ObservedConfidenceLower":        WORLD_COLORS["confidence_lower"],
+    "Greedy-ObservedConfidenceUpper":        WORLD_COLORS["confidence_upper"],
     # greedy algorithm, intersection-based objective function
-    "Greedy-IntersectionOcclusionAware": "lime",
-    "Greedy-Intersection":               "limegreen",
-    "Greedy-Intersection_cf":            "limegreen",
+    "Greedy-IntersectionOcclusionAware":     "lime",
+    "Greedy-Intersection":                   "limegreen",
+    "Greedy-Intersection_cf":                "limegreen",
     # greedy algorithm, confidence-based objective function
-    "Greedy-Confidence":                  "orange",
-    "Greedy-Confidence_cf":               "orange",
-    "Greedy-ConfidenceSimple":            "darkorange",
-    "Greedy-ConfidenceSimple_cf":         "darkorange",
-    "Greedy-ConfidenceSimplePolar":       "gold",
-    "Greedy-ConfidenceSimplePolar_cf":    "gold",
-    "Greedy-ConfidenceSimpleWeighted_cf": "goldenrod",
+    "Greedy-Confidence":                     "orange",
+    "Greedy-Confidence_cf":                  "orange",
+    "Greedy-ConfidenceSimple":               "darkorange",
+    "Greedy-ConfidenceSimple_cf":            "darkorange",
+    "Greedy-ConfidenceSimplePolar":          "gold",
+    "Greedy-ConfidenceSimplePolar_cf":       "gold",
+    "Greedy-ConfidenceSimpleWeighted_cf":    "goldenrod",
     # greedy algorithm, uncertainty-based objective function
-    "Greedy-Uncertainty":         "steelblue",
-    "Greedy-Uncertainty_cf":      "steelblue",
-    "Greedy-UncertaintyPolar":    "deepskyblue",
-    "Greedy-UncertaintyPolar_cf": "deepskyblue",
+    "Greedy-Uncertainty":                    "steelblue",
+    "Greedy-Uncertainty_cf":                 "steelblue",
+    "Greedy-UncertaintyPolar":               "deepskyblue",
+    "Greedy-UncertaintyPolar_cf":            "deepskyblue",
     # two-phase algorithm
     "TwoPhase-ConfidenceSimple-Uncertainty": "magenta",
 }
 
 
-class SimulationPlotter(InteractivePlotter):
+class SimulationPlotter(DynamicPlotter):
     def __init__(self, mode=None, **kwargs):
         super().__init__()
         self.mode = mode
@@ -72,7 +72,7 @@ class SimulationPlotter(InteractivePlotter):
         self.fig.set_size_inches(figsize)
         if self.mode == "real":
             # set descriptions
-            self.axis.set_title("World" if title is None else title)
+            self.axis.set_title("Real World" if title is None else title)
             self.axis.set_xlabel("x coordinates [m]" if xlabel is None else xlabel)
             self.axis.set_ylabel("y coordinates [m]" if ylabel is None else ylabel)
             # set aspect ratio
@@ -82,7 +82,7 @@ class SimulationPlotter(InteractivePlotter):
             self.axis.set_ylim([-rlim, rlim])
         elif self.mode == "polar":
             # set descriptions
-            self.axis.set_title("World in Polar Representation" if title is None else title)
+            self.axis.set_title("Polar World" if title is None else title)
             self.axis.set_xlabel("polar angle [rad]" if xlabel is None else xlabel)
             self.axis.set_ylabel("radial distance [m]" if ylabel is None else ylabel)
             # set view limits
@@ -136,24 +136,28 @@ class SimulationPlotter(InteractivePlotter):
             if not keepticks:  axis.xaxis.set_ticks([])
             if not keepticks:  axis.yaxis.set_ticks([])
         
-        if InteractivePlotter.interactive:
+        if DynamicPlotter.interactive:
             self.fig.canvas.footer_visible = False
 
     def args_scatter(self, size, marker="o"):
+        """Return style dictionary for scatter plot."""
         return dict(linestyle="none", marker=marker, markersize=size)
 
     def args_to_edgecolor(self, kwargs):
+        """Convert generic style dictionary to style for edges."""
         kwargs.update(dict(facecolor="none", edgecolor=kwargs["color"]))
         kwargs.pop("color")
         return kwargs
     
     def args_to_facecolor(self, kwargs):
+        """Convert generic style dictionary to style for faces."""
         kwargs.update(dict(facecolor=kwargs["color"], edgecolor="none"))
         kwargs.pop("color")
         return kwargs
 
-    def highlight_pixels(self, surface_points):
-        pixels = polar_to_pixel(surface_points[0], surface_points[1])
+    def highlight_pixels(self, points):
+        """Return list of rectangle patches highlighting pixels of given points."""
+        pixels = polar_to_pixel(points[0], points[1])
         return [Rectangle((params.GRID_H * (px-0.5), params.GRID_H * (py-0.5)), params.GRID_H, params.GRID_H) for px, py in pixels.T]
  
     
@@ -161,7 +165,6 @@ class SimulationPlotter(InteractivePlotter):
 
     def plot_grid(self, show_grid=True):
         color = WORLD_COLORS["grid"]
-
         kwargs = dict(color=color, linestyle="-", linewidth=0.2, alpha=0.5)
         def compute_grid_range(xlim, ylim):
             # compute grid range such that world center matches center of some pixel
@@ -246,31 +249,31 @@ class SimulationPlotter(InteractivePlotter):
         key = "plot_camera:{}:fov".format(name)
         kwargs_boundary = dict(color=color, alpha=0.4)
         kwargs_region = dict(color=color, alpha=0.1)
-        beta1 = params.CAM_FOV / 2
-        beta2 = -params.CAM_FOV / 2
+        alpha1 = params.CAM_FOV / 2
+        alpha2 = -params.CAM_FOV / 2
         if self.mode == "real":
             los = camera.theta + np.pi
             patches = [
-                Wedge(center=(x, y), r=params.CAM_DOF, theta1=math.degrees(los + beta2), theta2=math.degrees(los + beta1), **kwargs_region),
-                Wedge(center=(x, y), r=params.CAM_DOF, theta1=math.degrees(los + beta2), theta2=math.degrees(los + beta1), linestyle="-", linewidth=1, **self.args_to_edgecolor(kwargs_boundary)),
+                Wedge(center=(x, y), r=params.CAM_DOF, theta1=math.degrees(los + alpha2), theta2=math.degrees(los + alpha1), **kwargs_region),
+                Wedge(center=(x, y), r=params.CAM_DOF, theta1=math.degrees(los + alpha2), theta2=math.degrees(los + alpha1), linestyle="-", linewidth=1, **self.args_to_edgecolor(kwargs_boundary)),
             ]
             self.dynamic_patch_collection(key, patches, match_original=True, visible=show_fov)
         elif self.mode == "polar":
             # compute FOV boundary (in camera coordinates)
             # phi, boundary = np.concatenate([
-            #   camera.camera_to_polar(np.linspace(1e-6, beta1), params.CAM_DOF),
-            #   camera.camera_to_polar(beta1, np.linspace(params.CAM_DOF, 0)),
-            #   camera.camera_to_polar(beta2, np.linspace(0, params.CAM_DOF)),
-            #   camera.camera_to_polar(np.linspace(beta2, -1e-6), params.CAM_DOF),
+            #   camera.camera_to_polar(np.linspace(1e-6, alpha1), params.CAM_DOF),
+            #   camera.camera_to_polar(alpha1, np.linspace(params.CAM_DOF, 0)),
+            #   camera.camera_to_polar(alpha2, np.linspace(0, params.CAM_DOF)),
+            #   camera.camera_to_polar(np.linspace(alpha2, -1e-6), params.CAM_DOF),
             # ], axis=1)
 
             # compute FOV boundary (in polar coordinates almost analytically)
-            phi1, boundary1 = camera.camera_to_polar(np.linspace(1e-6, beta1), params.CAM_DOF)
-            phi2 = np.linspace(camera.camera_to_polar(beta1, params.CAM_DOF)[0], camera.theta)
-            boundary2 = camera.ray_f(beta1)(phi2)
-            phi3 = np.linspace(camera.theta, camera.camera_to_polar(beta2, params.CAM_DOF)[0])
-            boundary3 = camera.ray_f(beta2)(phi3)
-            phi4, boundary4 = camera.camera_to_polar(np.linspace(beta2, -1e-6), params.CAM_DOF)
+            phi1, boundary1 = camera.camera_to_polar(np.linspace(1e-6, alpha1), params.CAM_DOF)
+            phi2 = np.linspace(camera.camera_to_polar(alpha1, params.CAM_DOF)[0], camera.theta)
+            boundary2 = camera.ray_f(alpha1)(phi2)
+            phi3 = np.linspace(camera.theta, camera.camera_to_polar(alpha2, params.CAM_DOF)[0])
+            boundary3 = camera.ray_f(alpha2)(phi3)
+            phi4, boundary4 = camera.camera_to_polar(np.linspace(alpha2, -1e-6), params.CAM_DOF)
             phi, boundary = np.concatenate([
                 (phi1, boundary1),
                 (phi2, boundary2),
