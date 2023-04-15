@@ -46,95 +46,42 @@ ALGORITHM_COLORS = {
     "TwoPhase-ConfidenceSimple-Uncertainty": "magenta",
 }
 
-class Plotter():
+class InteractivePlotter():
     interactive = False
 
     @staticmethod
     def set_interactive(interactive=True):
-        Plotter.interactive = interactive
+        InteractivePlotter.interactive = interactive
 
-    def __init__(self, mode=None, **kwargs):
-        self.mode = mode
+    def __init__(self):
         self.fig = None
         self.axis = None # currently active axis
-        self.axes = {} # dictionary of all axes
-        self.__axes_context = [] # stack storing previously active axis for contextmanagers
         self.artists = {}
         self.__displayed = False
-
-        self.create_plot(**kwargs)
     
-
-    # PUBLIC METHODS
-
-    def create_plot(self, figsize=None, title=None, xlabel=None, ylabel=None, rlim=None, undecorated=False):
-        if rlim is None:
-            rlim = params.CAM_D * 1.1
-        if np.isscalar(figsize):
-            figsize = (figsize, figsize) # assume quadratic figure
-        
+    def create(self):
         # create figure
         if self.fig is not None:
             plt.close(self.fig)
-        self.fig, self.axis = plt.subplots(figsize=figsize, constrained_layout=True)
-        self.axes = {"main": self.axis}
-        self.__axes_context = []
+        self.fig, self.axis = plt.subplots(constrained_layout=True)
         self.artists = {}
-        self.require_display = True
+        self.__displayed = False
 
         # configure figure canvas for ipympl
-        if Plotter.interactive:
+        if InteractivePlotter.interactive:
             self.fig.canvas.toolbar_position = "top"
             self.fig.canvas.header_visible = False
-
-        # set mode-specific settings
-        if self.mode == "real":
-            # set descriptions
-            self.axis.set_title("World" if title is None else title)
-            self.axis.set_xlabel("x coordinates [m]" if xlabel is None else xlabel)
-            self.axis.set_ylabel("y coordinates [m]" if ylabel is None else ylabel)
-            # set aspect ratio
-            self.axis.set_aspect("equal")
-            # set view limits
-            self.axis.set_xlim([-rlim, rlim])
-            self.axis.set_ylim([-rlim, rlim])
-        elif self.mode == "polar":
-            # set descriptions
-            self.axis.set_title("World in Polar Representation" if title is None else title)
-            self.axis.set_xlabel("polar angle [rad]" if xlabel is None else xlabel)
-            self.axis.set_ylabel("radial distance [m]" if ylabel is None else ylabel)
-            # set view limits
-            self.axis.set_xlim([0, 2*np.pi])
-            self.axis.set_ylim([0, rlim])
-            # set polar ticks
-            polar_ticks = MultipleTicks(denominator=2, number=np.pi, latex="\pi", number_in_frac=False)
-            self.axis.xaxis.set_major_formatter(polar_ticks.formatter())
-            self.axis.xaxis.set_major_locator(polar_ticks.locator())
-        else:
-            # set descriptions
-            self.axis.set_title(title)
-            self.axis.set_xlabel(xlabel)
-            self.axis.set_ylabel(ylabel)
-        
-        # undecorate if necessary
-        if undecorated:
-            self.set_undecorated()
 
     def reset(self):
         # remove all artists
         self.artists = {}
-        # clear the main axis and remove all secondary axes
-        for name, axis in self.axes.items():
-            if name == "main":
-                axis.clear()
-            else:
-                axis.remove()
+        self.__displayed = False
 
     def display(self, out=None, clear=True, rescale=False):
         if out is None:
             out = contextlib.nullcontext()
         
-        if Plotter.interactive:
+        if InteractivePlotter.interactive:
             if self.__displayed:
                 # (optional) rescale plot automatically
                 if rescale:
@@ -153,22 +100,7 @@ class Plotter():
                 display(self.fig, clear=clear)
             self.__displayed = True
 
-    @contextlib.contextmanager
-    def use_axis(self, name, ylabel=None):
-        """Create context manager for additional y-axes sharing the same x-axis."""
-        if name not in self.axes.keys():
-            self.axes[name] = self.axes["main"].twinx()
-
-        self.__axes_context.append(self.axis)
-        self.axis = self.axes[name]
-        self.axis.set_ylabel(ylabel)
-        try:
-            yield self
-        finally:
-            self.axis = self.__axes_context.pop()
-   
-
-    # HELPER METHODS
+    # PLOTTING METHODS
 
     def static(self, key, plt_f, visible=True):
         # display artist
@@ -202,6 +134,8 @@ class Plotter():
             visible=visible,
         )
 
+    # HELPER METHODS
+
     def set_visible(self, item, visible):
         if isinstance(item, plt.Artist):
             item.set_visible(visible)
@@ -211,6 +145,91 @@ class Plotter():
         else:
             print("WARNING: not able to change visibility of {}".format(item))
 
+
+
+class SimulationPlotter(InteractivePlotter):
+    def __init__(self, mode=None, **kwargs):
+        super().__init__()
+        self.mode = mode
+        self.axes = {} # dictionary of all axes
+        self.__axes_context = [] # stack storing previously active axis for contextmanagers
+        
+        self.create(**kwargs)
+
+    
+    def create(self, figsize=None, title=None, xlabel=None, ylabel=None, rlim=None, undecorated=False):
+        if rlim is None:
+            rlim = params.CAM_D * 1.1
+        if np.isscalar(figsize):
+            figsize = (figsize, figsize) # assume quadratic figure
+        
+        # create figure
+        super().create()
+
+        # initialize additional axes
+        self.axes = {"main": self.axis}
+        self.__axes_context = []
+
+        # set style
+        self.fig.set_size_inches(figsize)
+        if self.mode == "real":
+            # set descriptions
+            self.axis.set_title("World" if title is None else title)
+            self.axis.set_xlabel("x coordinates [m]" if xlabel is None else xlabel)
+            self.axis.set_ylabel("y coordinates [m]" if ylabel is None else ylabel)
+            # set aspect ratio
+            self.axis.set_aspect("equal")
+            # set view limits
+            self.axis.set_xlim([-rlim, rlim])
+            self.axis.set_ylim([-rlim, rlim])
+        elif self.mode == "polar":
+            # set descriptions
+            self.axis.set_title("World in Polar Representation" if title is None else title)
+            self.axis.set_xlabel("polar angle [rad]" if xlabel is None else xlabel)
+            self.axis.set_ylabel("radial distance [m]" if ylabel is None else ylabel)
+            # set view limits
+            self.axis.set_xlim([0, 2*np.pi])
+            self.axis.set_ylim([0, rlim])
+            # set polar ticks
+            polar_ticks = MultipleTicks(denominator=2, number=np.pi, latex="\pi", number_in_frac=False)
+            self.axis.xaxis.set_major_formatter(polar_ticks.formatter())
+            self.axis.xaxis.set_major_locator(polar_ticks.locator())
+        else:
+            # set descriptions
+            self.axis.set_title(title)
+            self.axis.set_xlabel(xlabel)
+            self.axis.set_ylabel(ylabel)
+        
+        # undecorate if necessary
+        if undecorated:
+            self.set_undecorated()
+    
+    def reset(self):
+        super().reset()
+        # clear the main axis and remove all secondary axes
+        for name, axis in self.axes.items():
+            if name == "main":
+                axis.clear()
+            else:
+                axis.remove()
+
+    @contextlib.contextmanager
+    def use_axis(self, name, ylabel=None):
+        """Create context manager for additional y-axes sharing the same x-axis."""
+        if name not in self.axes.keys():
+            self.axes[name] = self.axes["main"].twinx()
+
+        self.__axes_context.append(self.axis)
+        self.axis = self.axes[name]
+        self.axis.set_ylabel(ylabel)
+        try:
+            yield self
+        finally:
+            self.axis = self.__axes_context.pop()
+   
+
+    # HELPER METHODS
+
     def set_undecorated(self, keeptitle=False, keeplabels=False, keepticks=False):
         for axis in self.axes.values():
             if not keeptitle:  axis.set_title(None)
@@ -219,7 +238,7 @@ class Plotter():
             if not keepticks:  axis.xaxis.set_ticks([])
             if not keepticks:  axis.yaxis.set_ticks([])
         
-        if Plotter.interactive:
+        if InteractivePlotter.interactive:
             self.fig.canvas.footer_visible = False
 
     def args_scatter(self, size, marker="o"):
