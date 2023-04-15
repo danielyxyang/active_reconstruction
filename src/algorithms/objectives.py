@@ -57,7 +57,7 @@ class Objective():
         return pixel_centers
 
     @staticmethod
-    def get_boundary_intersections(camera, gp):
+    def get_FOV_confidence_intersection(camera, gp):
         # compute intersections of FOV boundary and lower confidence bound
         lower, _ = gp.confidence_boundary()
         # duplicate lower boundary for wrap around
@@ -75,23 +75,23 @@ class Objective():
         fov_boundary = camera.ray_f(params.CAM_FOV_RAD/2)(lower[0])
         fov_limit = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
         intersections = intersect_functions(fov_boundary, lower[1], mode="left")
-        c1 = np.concatenate([lower[:, intersections].T, [fov_limit]]).T
-        c1 = c1[:, is_in_range(c1[0], (fov_limit[0], camera.theta), mod=2*np.pi)]
-        c1 = c1[:, np.argmin(camera.polar_to_camera(*c1)[1])]
+        phi1 = np.concatenate([lower[:, intersections].T, [fov_limit]]).T
+        phi1 = phi1[:, is_in_range(phi1[0], (fov_limit[0], camera.theta), mod=2*np.pi)]
+        phi1 = phi1[:, np.argmin(camera.polar_to_camera(*phi1)[1])]
         # find intersection to the right
         fov_boundary = camera.ray_f(-params.CAM_FOV_RAD/2)(lower[0])
         fov_limit = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
         intersections = intersect_functions(fov_boundary, lower[1], mode="right")
-        c2 = np.concatenate([lower[:, intersections].T, [fov_limit]]).T
-        c2 = c2[:, is_in_range(c2[0], (camera.theta, fov_limit[0]), mod=2*np.pi)]
-        c2 = c2[:, np.argmin(camera.polar_to_camera(*c2)[1])]
-        return c1, c2
+        phi2 = np.concatenate([lower[:, intersections].T, [fov_limit]]).T
+        phi2 = phi2[:, is_in_range(phi2[0], (camera.theta, fov_limit[0]), mod=2*np.pi)]
+        phi2 = phi2[:, np.argmin(camera.polar_to_camera(*phi2)[1])]
+        return phi1, phi2
     
     @staticmethod
     def get_simple_FOV_endpoint(camera):
-        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
-        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
-        return c1, c2
+        phi1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
+        phi2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
+        return phi1, phi2
 
 
 class ObservedSurfaceMarginalObjective(Objective):
@@ -155,9 +155,9 @@ class IntersectionOcclusionAwareObjective(Objective):
         pixel_polar[0] %= 2*np.pi
         return pixel_polar
 
-    def get_boundary(self, camera, data):
+    def get_summation_interval(self, camera, data):
         gp = data[Objective.CONFIDENCE]
-        return Objective.get_boundary_intersections(camera, gp)
+        return Objective.get_FOV_confidence_intersection(camera, gp)
 
 
 class IntersectionObjective(Objective):
@@ -181,8 +181,8 @@ class IntersectionObjective(Objective):
         gp = data[Objective.CONFIDENCE]
 
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
-        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
+        phi1, phi2 = self.get_summation_interval(camera, data)
+        mask = is_in_range(gp.x_eval, (phi1[0], phi2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
         delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
@@ -190,8 +190,8 @@ class IntersectionObjective(Objective):
         upper = upper[mask]
         # compute FOV boundary
         phi = gp.x_eval[mask]
-        mask1 = is_in_range(phi, (c1[0], camera.theta), mod=2*np.pi)
-        mask2 = is_in_range(phi, (camera.theta, c2[0]), mod=2*np.pi)
+        mask1 = is_in_range(phi, (phi1[0], camera.theta), mod=2*np.pi)
+        mask2 = is_in_range(phi, (camera.theta, phi2[0]), mod=2*np.pi)
         fov = np.zeros_like(phi)
         fov[mask1] = camera.ray_f(params.CAM_FOV_RAD/2)(phi[mask1])
         fov[mask2] = camera.ray_f(-params.CAM_FOV_RAD/2)(phi[mask2])
@@ -199,7 +199,7 @@ class IntersectionObjective(Objective):
         estimate = np.sum(1/2 * np.maximum(np.minimum(upper, fov)**2 - lower**2, 0) * delta_phi) / (params.GRID_H**2)
         return estimate
     
-    def get_boundary(self, camera, data):
+    def get_summation_interval(self, camera, data):
         return Objective.get_simple_FOV_endpoint(camera)
 
 
@@ -211,12 +211,12 @@ class ConfidenceObjective(Objective):
         gp = data[Objective.CONFIDENCE]
         
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
+        phi1, phi2 = self.get_summation_interval(camera, data)
         # create list of candidate pixels in confidence region
         pixel_centers = Objective.get_candidate_pixels()
         pixel_polar = cartesian_to_polar(*pixel_centers)
-        # keep pixels within c1 and c2
-        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
+        # keep pixels within phi1 and phi2
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (phi1[0], phi2[0]), mod=2*np.pi)]
         # keep pixels between upper and lower confidence bound
         lower, upper = gp.confidence_boundary(pixel_polar[0], interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
@@ -227,8 +227,8 @@ class ConfidenceObjective(Objective):
         gp = data[Objective.CONFIDENCE]
         
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
-        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
+        phi1, phi2 = self.get_summation_interval(camera, data)
+        mask = is_in_range(gp.x_eval, (phi1[0], phi2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
         delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
@@ -238,9 +238,9 @@ class ConfidenceObjective(Objective):
         estimate = np.sum(1/2 * (upper**2 - lower**2) * delta_phi) / (params.GRID_H**2)
         return estimate
 
-    def get_boundary(self, camera, data):
+    def get_summation_interval(self, camera, data):
         gp = data[Objective.CONFIDENCE]
-        return Objective.get_boundary_intersections(camera, gp)
+        return Objective.get_FOV_confidence_intersection(camera, gp)
 
 
 class ConfidenceSimpleObjective(Objective):
@@ -250,12 +250,12 @@ class ConfidenceSimpleObjective(Objective):
         gp = data[Objective.CONFIDENCE]
         
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
+        phi1, phi2 = self.get_summation_interval(camera, data)
         # create list of candidate pixels in confidence region
         pixel_centers = Objective.get_candidate_pixels()
         pixel_polar = cartesian_to_polar(*pixel_centers)
-        # keep pixels within c1 and c2
-        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
+        # keep pixels within phi1 and phi2
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (phi1[0], phi2[0]), mod=2*np.pi)]
         # keep pixels between upper and lower confidence bound
         lower, upper = gp.confidence_boundary(pixel_polar[0], interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
@@ -266,8 +266,8 @@ class ConfidenceSimpleObjective(Objective):
         gp = data[Objective.CONFIDENCE]
 
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
-        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
+        phi1, phi2 = self.get_summation_interval(camera, data)
+        mask = is_in_range(gp.x_eval, (phi1[0], phi2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
         delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
@@ -277,7 +277,7 @@ class ConfidenceSimpleObjective(Objective):
         estimate = np.sum(1/2 * (upper**2 - lower**2) * delta_phi) / (params.GRID_H**2)
         return estimate
 
-    def get_boundary(self, camera, data):
+    def get_summation_interval(self, camera, data):
         return Objective.get_simple_FOV_endpoint(camera)
 
 
@@ -288,12 +288,12 @@ class ConfidencePolarObjective(Objective):
         gp = data[Objective.CONFIDENCE]
 
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
+        phi1, phi2 = self.get_summation_interval(camera, data)
         # create list of candidate pixels in confidence region
         pixel_centers = Objective.get_candidate_pixels(xlim=(0, 2*np.pi), ylim=(0, 10))
         pixel_polar = pixel_centers
-        # keep pixels within c1 and c2
-        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
+        # keep pixels within phi1 and phi2
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (phi1[0], phi2[0]), mod=2*np.pi)]
         # keep pixels between upper and lower confidence bound
         lower, upper = gp.confidence_boundary(pixel_polar[0], interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
@@ -304,8 +304,8 @@ class ConfidencePolarObjective(Objective):
         gp = data[Objective.CONFIDENCE]
 
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
-        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
+        phi1, phi2 = self.get_summation_interval(camera, data)
+        mask = is_in_range(gp.x_eval, (phi1[0], phi2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
         delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
@@ -315,7 +315,7 @@ class ConfidencePolarObjective(Objective):
         estimate = np.sum((upper - lower) * delta_phi) / (params.GRID_H**2)
         return estimate
 
-    def get_boundary(self, camera, data):
+    def get_summation_interval(self, camera, data):
         return Objective.get_simple_FOV_endpoint(camera)
 
 
@@ -327,8 +327,8 @@ class ConfidenceSimpleWeightedObjective(Objective):
         gp = data[Objective.CONFIDENCE]
 
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
-        mask = is_in_range(gp.x_eval, (c1[0], c2[0]), mod=2*np.pi)
+        phi1, phi2 = self.get_summation_interval(camera, data)
+        mask = is_in_range(gp.x_eval, (phi1[0], phi2[0]), mod=2*np.pi)
         # compute upper and lower boundary
         lower, upper = gp.confidence_boundary()
         delta_phi = gp.x_eval[1] - gp.x_eval[0] # TODO improve
@@ -336,8 +336,8 @@ class ConfidenceSimpleWeightedObjective(Objective):
         upper = upper[mask]
         # compute FOV boundary
         phi = gp.x_eval[mask]
-        mask1 = is_in_range(phi, (c1[0], camera.theta), mod=2*np.pi)
-        mask2 = is_in_range(phi, (camera.theta, c2[0]), mod=2*np.pi)
+        mask1 = is_in_range(phi, (phi1[0], camera.theta), mod=2*np.pi)
+        mask2 = is_in_range(phi, (camera.theta, phi2[0]), mod=2*np.pi)
         fov = np.zeros_like(phi)
         fov[mask1] = camera.ray_f(params.CAM_FOV_RAD/2)(phi[mask1])
         fov[mask2] = camera.ray_f(-params.CAM_FOV_RAD/2)(phi[mask2])
@@ -345,38 +345,8 @@ class ConfidenceSimpleWeightedObjective(Objective):
         estimate = np.sum(fov/params.CAM_D * 1/2 * (upper**2 - lower**2) * delta_phi) / (params.GRID_H**2)
         return estimate
     
-    def get_boundary(self, camera, data):
+    def get_summation_interval(self, camera, data):
         return Objective.get_simple_FOV_endpoint(camera)
-
-
-# class ConfidenceSimpleWeighted2Objective(Objective):
-#     """Some docstring"""
-
-#     def compute_estimate_cf(self, camera, data):
-#         gp = data[Objective.CONFIDENCE]
-
-#         # compute summation boundary
-#         c1, c2 = self.get_boundary(camera, data)
-#         # compute upper and lower boundary
-#         lower, upper = gp.confidence_boundary()
-#         delta_phi = lower[0, 1] - lower[0, 0] # TODO improve
-#         lower = lower[:, is_in_range(lower[0], (c1[0], c2[0]), mod=2*np.pi)]
-#         upper = upper[:, is_in_range(upper[0], (c1[0], c2[0]), mod=2*np.pi)]
-#         # compute FOV boundary
-#         phi = lower[0]
-#         mask1 = is_in_range(phi, (c1[0], camera.theta), mod=2*np.pi)
-#         mask2 = is_in_range(phi, (camera.theta, c2[0]), mod=2*np.pi)
-#         fov = np.zeros_like(phi)
-#         fov[mask1] = camera.ray_f(params.CAM_FOV_RAD/2)(phi[mask1])
-#         fov[mask2] = camera.ray_f(-params.CAM_FOV_RAD/2)(phi[mask2])
-#         # compute weighted number of pixels
-#         estimate = np.sum((fov / params.CAM_D) * (upper[1] ** 2 - lower[1] ** 2) / 2 * delta_phi) / (params.GRID_H ** 2)
-#         return estimate
-
-#     def get_boundary(self, camera, data):
-#         c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
-#         c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
-#         return c1, c2
 
 
 class UncertaintyObjective(Objective):
@@ -386,12 +356,12 @@ class UncertaintyObjective(Objective):
         gp = data[Objective.CONFIDENCE]
         
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
+        phi1, phi2 = self.get_summation_interval(camera, data)
         # create list of candidate pixels in confidence region
         pixel_centers = Objective.get_candidate_pixels()
         pixel_polar = cartesian_to_polar(*pixel_centers)
-        # keep pixels within c1 and c2
-        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
+        # keep pixels within phi1 and phi2
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (phi1[0], phi2[0]), mod=2*np.pi)]
         # keep pixels within uncertainty at current camera location
         lower, upper = gp.confidence_boundary(camera.theta, interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
@@ -401,13 +371,13 @@ class UncertaintyObjective(Objective):
     def compute_estimate_cf(self, camera, data):
         gp = data[Objective.CONFIDENCE]
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
+        phi1, phi2 = self.get_summation_interval(camera, data)
         # compute upper and lower boundary at current camera position
         lower, upper = gp.confidence_boundary(camera.theta, interp=True)
-        estimate = 1/2 * (c2[0] - c1[0]) * (upper**2 - lower**2) / (params.GRID_H**2)
+        estimate = 1/2 * (phi2[0] - phi1[0]) * (upper**2 - lower**2) / (params.GRID_H**2)
         return estimate
     
-    def get_boundary(self, camera, data):
+    def get_summation_interval(self, camera, data):
         return Objective.get_simple_FOV_endpoint(camera)
 
 
@@ -418,12 +388,12 @@ class UncertaintyPolarObjective(Objective):
         gp = data[Objective.CONFIDENCE]
 
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
+        phi1, phi2 = self.get_summation_interval(camera, data)
         # create list of candidate pixels in intersection
         pixel_centers = Objective.get_candidate_pixels(xlim=(0, 2*np.pi), ylim=(0, 10))
         pixel_polar = pixel_centers
-        # keep pixels within c1 and c2
-        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (c1[0], c2[0]), mod=2*np.pi)]
+        # keep pixels within phi1 and phi2
+        pixel_polar = pixel_polar[:, is_in_range(pixel_polar[0], (phi1[0], phi2[0]), mod=2*np.pi)]
         # keep pixels within uncertainty at current camera location
         lower, upper = gp.confidence_boundary(camera.theta, interp=True)
         pixel_polar = pixel_polar[:, is_in_range(pixel_polar[1], (lower, upper))]
@@ -433,13 +403,13 @@ class UncertaintyPolarObjective(Objective):
     def compute_estimate_cf(self, camera, data):
         gp = data[Objective.CONFIDENCE]
         # compute summation boundary
-        c1, c2 = self.get_boundary(camera, data)
+        phi1, phi2 = self.get_summation_interval(camera, data)
         # compute upper and lower boundary at current camera position
         lower, upper = gp.confidence_boundary(camera.theta, interp=True)
-        estimate = (c2[0] - c1[0]) * (upper - lower) / (params.GRID_H**2)
+        estimate = (phi2[0] - phi1[0]) * (upper - lower) / (params.GRID_H**2)
         return estimate
     
-    def get_boundary(self, camera, data):
+    def get_summation_interval(self, camera, data):
         return Objective.get_simple_FOV_endpoint(camera)
     
 
@@ -456,5 +426,5 @@ class UncertaintyPolarObjective(Objective):
 
 #         return None
     
-#     def get_boundary(self, camera, data):
+#     def get_summation_interval(self, camera, data):
 #         return None
