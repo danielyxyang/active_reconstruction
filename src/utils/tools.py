@@ -2,6 +2,8 @@ import time
 import json
 import contextlib
 import numpy as np
+import types
+from collections import UserDict
 
 
 class Profiler():
@@ -146,6 +148,25 @@ class Profiler():
                     self.start(name=name_prev)
 
 
+class LoopChecker():
+    def __init__(self, location=None, threshold=1e6):
+        self.location = location
+        self.threshold = int(threshold)
+        self.counter = 0
+    
+    def __call__(self):
+        self.counter = (self.counter + 1) % self.threshold
+        if(self.counter == 0):
+            print("WARNING: LoopChecker in \"{}\" reached threshold {}".format(self.location, self.threshold))
+
+
+class LazyDict(UserDict):
+    def __getitem__(self, key):
+        if isinstance(self.data[key], types.FunctionType):
+            self.data[key] = self.data[key]()
+        return self.data[key]
+
+
 def build_json_encoder(encoders=[]):
     """
     Encode common non-serializable types into serializable ones with the help of
@@ -163,15 +184,3 @@ def build_json_encoder(encoders=[]):
                 return encoder(obj)
         return json.JSONEncoder().default(obj)
     return encoder
-
-
-class LoopChecker():
-    def __init__(self, location=None, threshold=1e6):
-        self.location = location
-        self.threshold = int(threshold)
-        self.counter = 0
-    
-    def __call__(self):
-        self.counter = (self.counter + 1) % self.threshold
-        if(self.counter == 0):
-            print("WARNING: LoopChecker in \"{}\" reached threshold {}".format(self.location, self.threshold))

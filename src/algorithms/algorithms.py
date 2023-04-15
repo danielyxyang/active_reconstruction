@@ -18,6 +18,7 @@ from algorithms.objectives import (
 from algorithms.observations import Observations
 from simulation.camera import Camera
 from utils.math import is_in_range
+from utils.tools import LazyDict
 
 TRUE_ALGORITHM = "Greedy-ObservedSurfaceMarginal"
 
@@ -111,34 +112,34 @@ class TwoPhaseAlgorithm(Algorithm):
             return nbv2
         else:
             return nbv2, np.array([estimates1, estimates2])
-    
+
 
 def build_algorithms(build_gp=lambda: None, object=None):
-    return {
+    return LazyDict({
         # greedy algorithm, observation-based objective function
-        TRUE_ALGORITHM:                   GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=build_gp()),
-        "Greedy-ObservedSurface":         GreedyAlgorithm(ObservedSurfaceObjective(obj=object), gp=build_gp()),
-        "Greedy-ObservedConfidenceLower": GreedyAlgorithm(ObservedConfidenceLowerObjective(), gp=build_gp()),
-        "Greedy-ObservedConfidenceUpper": GreedyAlgorithm(ObservedConfidenceUpperObjective(), gp=build_gp()),
+        TRUE_ALGORITHM:                   lambda: GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=build_gp()),
+        "Greedy-ObservedSurface":         lambda: GreedyAlgorithm(ObservedSurfaceObjective(obj=object), gp=build_gp()),
+        "Greedy-ObservedConfidenceLower": lambda: GreedyAlgorithm(ObservedConfidenceLowerObjective(), gp=build_gp()),
+        "Greedy-ObservedConfidenceUpper": lambda: GreedyAlgorithm(ObservedConfidenceUpperObjective(), gp=build_gp()),
         # greedy algorithm, intersection-based objective function
-        "Greedy-IntersectionOcclusionAware": GreedyAlgorithm(IntersectionOcclusionAwareObjective(), gp=build_gp()),
-        "Greedy-Intersection":               GreedyAlgorithm(IntersectionObjective(), gp=build_gp()),
-        "Greedy-Intersection_cf":            GreedyAlgorithm(IntersectionObjective(use_cf=True), gp=build_gp()),
+        "Greedy-IntersectionOcclusionAware": lambda: GreedyAlgorithm(IntersectionOcclusionAwareObjective(), gp=build_gp()),
+        "Greedy-Intersection":               lambda: GreedyAlgorithm(IntersectionObjective(), gp=build_gp()),
+        "Greedy-Intersection_cf":            lambda: GreedyAlgorithm(IntersectionObjective(use_cf=True), gp=build_gp()),
         # greedy algorithm, confidence-based objective function
-        "Greedy-Confidence":                  GreedyAlgorithm(ConfidenceObjective(), gp=build_gp()),
-        "Greedy-Confidence_cf":               GreedyAlgorithm(ConfidenceObjective(use_cf=True), gp=build_gp()),
-        "Greedy-ConfidenceSimple":            GreedyAlgorithm(ConfidenceSimpleObjective(), gp=build_gp()),
-        "Greedy-ConfidenceSimple_cf":         GreedyAlgorithm(ConfidenceSimpleObjective(use_cf=True), gp=build_gp()),
-        "Greedy-ConfidenceSimplePolar":       GreedyAlgorithm(ConfidencePolarObjective(), gp=build_gp()),
-        "Greedy-ConfidenceSimplePolar_cf":    GreedyAlgorithm(ConfidencePolarObjective(use_cf=True), gp=build_gp()),
-        "Greedy-ConfidenceSimpleWeighted_cf": GreedyAlgorithm(ConfidenceSimpleWeightedObjective(use_cf=True), gp=build_gp()),
+        "Greedy-Confidence":                  lambda: GreedyAlgorithm(ConfidenceObjective(), gp=build_gp()),
+        "Greedy-Confidence_cf":               lambda: GreedyAlgorithm(ConfidenceObjective(use_cf=True), gp=build_gp()),
+        "Greedy-ConfidenceSimple":            lambda: GreedyAlgorithm(ConfidenceSimpleObjective(), gp=build_gp()),
+        "Greedy-ConfidenceSimple_cf":         lambda: GreedyAlgorithm(ConfidenceSimpleObjective(use_cf=True), gp=build_gp()),
+        "Greedy-ConfidenceSimplePolar":       lambda: GreedyAlgorithm(ConfidencePolarObjective(), gp=build_gp()),
+        "Greedy-ConfidenceSimplePolar_cf":    lambda: GreedyAlgorithm(ConfidencePolarObjective(use_cf=True), gp=build_gp()),
+        "Greedy-ConfidenceSimpleWeighted_cf": lambda: GreedyAlgorithm(ConfidenceSimpleWeightedObjective(use_cf=True), gp=build_gp()),
         # greedy algorithm, uncertainty-based objective function
-        "Greedy-Uncertainty":         GreedyAlgorithm(UncertaintyObjective(), gp=build_gp()),
-        "Greedy-Uncertainty_cf":      GreedyAlgorithm(UncertaintyObjective(use_cf=True), gp=build_gp()),
-        "Greedy-UncertaintyPolar":    GreedyAlgorithm(UncertaintyPolarObjective(), gp=build_gp()),
-        "Greedy-UncertaintyPolar_cf": GreedyAlgorithm(UncertaintyPolarObjective(use_cf=True), gp=build_gp()),
+        "Greedy-Uncertainty":         lambda: GreedyAlgorithm(UncertaintyObjective(), gp=build_gp()),
+        "Greedy-Uncertainty_cf":      lambda: GreedyAlgorithm(UncertaintyObjective(use_cf=True), gp=build_gp()),
+        "Greedy-UncertaintyPolar":    lambda: GreedyAlgorithm(UncertaintyPolarObjective(), gp=build_gp()),
+        "Greedy-UncertaintyPolar_cf": lambda: GreedyAlgorithm(UncertaintyPolarObjective(use_cf=True), gp=build_gp()),
         # two-phase algorithm
-        "TwoPhase-ConfidenceSimple-Uncertainty": TwoPhaseAlgorithm(ConfidenceSimpleObjective(), UncertaintyObjective(use_cf=True), gp=build_gp()),
-    }
+        "TwoPhase-ConfidenceSimple-Uncertainty": lambda: TwoPhaseAlgorithm(ConfidenceSimpleObjective(), UncertaintyObjective(use_cf=True), gp=build_gp()),
+    })
 
 ALGORITHMS = list(build_algorithms().keys())
