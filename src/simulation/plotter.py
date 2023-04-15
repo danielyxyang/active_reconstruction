@@ -4,12 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection, LineCollection
 from matplotlib.patches import Circle, Rectangle, Wedge, Polygon
-from IPython.display import display
 
 import parameters as params
 from algorithms.algorithms import TRUE_ALGORITHM
 from utils.math import polar_to_cartesian, cartesian_to_polar, polar_to_pixel
-from utils.plotting import MultipleTicks
+from utils.plotting import InteractivePlotter, MultipleTicks
 
 WORLD_COLORS = {
     "grid": "gray",
@@ -19,6 +18,7 @@ WORLD_COLORS = {
     "confidence_lower": "dimgray",
     "confidence_upper": "darkgray",
 }
+
 ALGORITHM_COLORS = {
     # greedy algorithm, observation-based objective function
     TRUE_ALGORITHM:                   "darkred",
@@ -46,106 +46,6 @@ ALGORITHM_COLORS = {
     "TwoPhase-ConfidenceSimple-Uncertainty": "magenta",
 }
 
-class InteractivePlotter():
-    interactive = False
-
-    @staticmethod
-    def set_interactive(interactive=True):
-        InteractivePlotter.interactive = interactive
-
-    def __init__(self):
-        self.fig = None
-        self.axis = None # currently active axis
-        self.artists = {}
-        self.__displayed = False
-    
-    def create(self):
-        # create figure
-        if self.fig is not None:
-            plt.close(self.fig)
-        self.fig, self.axis = plt.subplots(constrained_layout=True)
-        self.artists = {}
-        self.__displayed = False
-
-        # configure figure canvas for ipympl
-        if InteractivePlotter.interactive:
-            self.fig.canvas.toolbar_position = "top"
-            self.fig.canvas.header_visible = False
-
-    def reset(self):
-        # remove all artists
-        self.artists = {}
-        self.__displayed = False
-
-    def display(self, out=None, clear=True, rescale=False):
-        if out is None:
-            out = contextlib.nullcontext()
-        
-        if InteractivePlotter.interactive:
-            if self.__displayed:
-                # (optional) rescale plot automatically
-                if rescale:
-                    self.axis.relim()
-                    self.axis.autoscale(tight=True)
-                # redraw plot
-                self.fig.canvas.draw()
-                self.fig.canvas.flush_events()
-            else:
-                # display plot
-                with out:
-                    display(self.fig.canvas, clear=clear)
-                self.__displayed = True
-        else:
-            with out:
-                display(self.fig, clear=clear)
-            self.__displayed = True
-
-    # PLOTTING METHODS
-
-    def static(self, key, plt_f, visible=True):
-        # display artist
-        if key not in self.artists.keys():
-            self.artists[key] = plt_f()
-        # set visibility of artist
-        self.set_visible(self.artists[key], visible)
-
-    def dynamic(self, key, plt_f, update_f, visible=True):
-        # display or update artist
-        if key not in self.artists.keys():
-            self.artists[key] = plt_f()
-        else:
-            update_f(self.artists[key])
-        # set visibility of artist
-        self.set_visible(self.artists[key], visible)
-    
-    def dynamic_plot(self, key, *args, visible=True, **kwargs):
-        self.dynamic(
-            key,
-            lambda: self.axis.plot(*args, **kwargs),
-            lambda lines: [line.set_data(*args[2*i:2*i+2]) for i, line in enumerate(lines)],
-            visible=visible,
-        )
-    
-    def dynamic_patch_collection(self, key, patches, visible=True, **kwargs):
-        self.dynamic(
-            key,
-            lambda: self.axis.add_collection(PatchCollection(patches, **kwargs)),
-            lambda collection: collection.set_paths(patches),
-            visible=visible,
-        )
-
-    # HELPER METHODS
-
-    def set_visible(self, item, visible):
-        if isinstance(item, plt.Artist):
-            item.set_visible(visible)
-        elif isinstance(item, list):
-            for subitem in item:
-                subitem.set_visible(visible)
-        else:
-            print("WARNING: not able to change visibility of {}".format(item))
-
-
 
 class SimulationPlotter(InteractivePlotter):
     def __init__(self, mode=None, **kwargs):
@@ -165,8 +65,6 @@ class SimulationPlotter(InteractivePlotter):
         
         # create figure
         super().create()
-
-        # initialize additional axes
         self.axes = {"main": self.axis}
         self.__axes_context = []
 
@@ -265,52 +163,51 @@ class SimulationPlotter(InteractivePlotter):
         color = WORLD_COLORS["grid"]
 
         kwargs = dict(color=color, linestyle="-", linewidth=0.2, alpha=0.5)
-        # TODO improve
+        def compute_grid_range(xlim, ylim):
+            # compute grid range such that world center matches center of some pixel
+            floorceil = lambda lim: np.array([np.floor(lim[0]), np.ceil(lim[1])])
+            grid_xlim = floorceil(np.array(xlim) / params.GRID_H - 0.5)
+            grid_ylim = floorceil(np.array(ylim) / params.GRID_H - 0.5)
+            grid_range_x = (np.arange(grid_xlim[0], grid_xlim[1]+1) + 0.5) * params.GRID_H
+            grid_range_y = (np.arange(grid_ylim[0], grid_ylim[1]+1) + 0.5) * params.GRID_H
+            return grid_range_x, grid_range_y
         if self.mode == "real":
-            # kwargs = dict(visible=True, **kwargs) if show else dict(visible=False)
-            # grid_range_x = np.arange(*self.axis.get_xlim(), params.GRID_H) + params.GRID_H/2
-            # grid_range_y = np.arange(*self.axis.get_ylim(), params.GRID_H) + params.GRID_H/2
-            # self.axis.set_xticks(grid_range_x, minor=True)
-            # self.axis.set_yticks(grid_range_y, minor=True)
-            # self.axis.tick_params(which="minor", bottom=False, left=False)
-            # self.axis.grid(which="minor", **kwargs)
             def plot_f():
-                # compute grid range such that world center matches center of some pixel
-                floorceil = lambda lim: np.array([np.floor(lim[0]), np.ceil(lim[1])])
-                grid_xlim = floorceil(np.array(self.axis.get_xlim()) / params.GRID_H - 0.5)
-                grid_ylim = floorceil(np.array(self.axis.get_ylim()) / params.GRID_H - 0.5)
-                grid_range_x = (np.arange(grid_xlim[0], grid_xlim[1]+1) + 0.5) * params.GRID_H
-                grid_range_y = (np.arange(grid_ylim[0], grid_ylim[1]+1) + 0.5) * params.GRID_H
-                # compute grid lines
+                grid_range_x, grid_range_y = compute_grid_range(self.axis.get_xlim(), self.axis.get_ylim())
+                # compute horizontal lines
                 horizontal_lines = np.stack([
                     np.array([np.full_like(grid_range_y, grid_range_x[0]), grid_range_y]).T,
                     np.array([np.full_like(grid_range_y, grid_range_x[-1]), grid_range_y]).T,
                 ], axis=-2)
+                # compute vertical lines
                 vertical_lines = np.stack([
                     np.array([grid_range_x, np.full_like(grid_range_x, grid_range_y[0])]).T,
                     np.array([grid_range_x, np.full_like(grid_range_x, grid_range_y[-1])]).T,
                 ], axis=-2)
+                # combine lines
                 lines = np.concatenate([horizontal_lines, vertical_lines])
                 return self.axis.add_collection(LineCollection(lines, **kwargs))
             self.static("plot_grid", plot_f, visible=show_grid)
         elif self.mode == "polar":
-            # TODO some strange artefacts???
             def plot_f():
                 rlim = self.axis.get_ylim()[1]
-                grid_range = np.arange(-rlim, rlim, params.GRID_H) + params.GRID_H/2
-                horizontal1 = np.array([np.full_like(grid_range, -rlim), grid_range]).T
-                horizontal2 = np.array([np.full_like(grid_range, rlim), grid_range]).T
+                grid_range_x, grid_range_y = compute_grid_range((-rlim, rlim), (-rlim, rlim))
+                # compute horizontal lines
+                horizontal1 = np.array([np.full_like(grid_range_y, -rlim), grid_range_y]).T
+                horizontal2 = np.array([np.full_like(grid_range_y, rlim), grid_range_y]).T
                 horizontal_lines = np.linspace(horizontal1, horizontal2, num=100, axis=1)
-                grid_range_pos = grid_range[grid_range >= 0]
-                grid_range_neg = grid_range[grid_range < 0]
-                vertical1 = np.array([grid_range_pos, np.full_like(grid_range_pos, -rlim)]).T
-                vertical2 = np.array([grid_range_pos, np.full_like(grid_range_pos, 0)]).T
-                vertical3 = np.array([grid_range_pos, np.full_like(grid_range_pos, rlim)]).T
-                vertical4 = np.array([grid_range_neg, np.full_like(grid_range_neg, -rlim)]).T
-                vertical5 = np.array([grid_range_neg, np.full_like(grid_range_neg, rlim)]).T
+                # compute vertical lines
+                grid_range_x_pos = grid_range_x[grid_range_x >= 0]
+                grid_range_x_neg = grid_range_x[grid_range_x < 0]
+                vertical1 = np.array([grid_range_x_pos, np.full_like(grid_range_x_pos, -rlim)]).T
+                vertical2 = np.array([grid_range_x_pos, np.full_like(grid_range_x_pos, 0)]).T
+                vertical3 = np.array([grid_range_x_pos, np.full_like(grid_range_x_pos, rlim)]).T
+                vertical4 = np.array([grid_range_x_neg, np.full_like(grid_range_x_neg, -rlim)]).T
+                vertical5 = np.array([grid_range_x_neg, np.full_like(grid_range_x_neg, rlim)]).T
                 vertical_lines1 = np.linspace(vertical1, vertical2, num=100, endpoint=False, axis=1)
                 vertical_lines2 = np.linspace(vertical2, vertical3, num=100, axis=1)
                 vertical_lines3 = np.linspace(vertical4, vertical5, num=100, axis=1)
+                # combine lines
                 lines = np.concatenate([horizontal_lines, vertical_lines1, vertical_lines2, vertical_lines3])
                 lines = cartesian_to_polar(*lines.T).T
                 lines[:, :, 0] %= 2*np.pi
@@ -417,7 +314,8 @@ class SimulationPlotter(InteractivePlotter):
         key = "plot_camera:{}:view_circle".format(name)
         kwargs = dict(color=color, linestyle="--", linewidth=1, alpha=0.5)
         if self.mode == "real":
-            self.static(key, lambda: self.axis.add_patch(Circle((0, 0), radius=params.CAM_D, **self.args_to_edgecolor(kwargs))), visible=show_view_circle)
+            patch = Circle((0, 0), radius=params.CAM_D, **self.args_to_edgecolor(kwargs))
+            self.static(key, lambda: self.axis.add_patch(patch), visible=show_view_circle)
         elif self.mode == "polar":
             self.static(key, lambda: self.axis.axhline(params.CAM_D, **kwargs), visible=show_view_circle)
 
@@ -429,8 +327,7 @@ class SimulationPlotter(InteractivePlotter):
         kwargs = dict(color=color, linestyle="-", linewidth=1)
         phi = np.linspace(0, 2*np.pi, n)
         if self.mode == "real":
-            x, y = polar_to_cartesian(phi, obj(phi))
-            self.dynamic_plot(key, x, y, **kwargs, visible=show_object)
+            self.dynamic_plot(key, *polar_to_cartesian(phi, obj(phi)), **kwargs, visible=show_object)
         elif self.mode == "polar":
             self.dynamic_plot(key, phi, obj(phi), **kwargs, visible=show_object)
         
@@ -438,10 +335,9 @@ class SimulationPlotter(InteractivePlotter):
         key = "plot_object:{}:points".format(name)
         kwargs = dict(**self.args_scatter(2), color=color, label="object surface points")
         if self.mode == "real":
-            surface_points = polar_to_cartesian(obj.surface_points[0], obj.surface_points[1])
-            self.dynamic_plot(key, surface_points[0], surface_points[1], **kwargs, visible=show_points)
+            self.dynamic_plot(key, *polar_to_cartesian(*obj.surface_points), **kwargs, visible=show_points)
         elif self.mode == "polar":
-            self.dynamic_plot(key, obj.surface_points[0], obj.surface_points[1], **kwargs, visible=show_points)
+            self.dynamic_plot(key, *obj.surface_points, **kwargs, visible=show_points)
         
         # highlight surface pixels
         key = "plot_object:{}:pixels".format(name)
@@ -477,8 +373,7 @@ class SimulationPlotter(InteractivePlotter):
         key = "plot_confidence:{}:mean".format(name)
         kwargs = dict(color=color, linestyle="-", linewidth=1)
         if self.mode == "real":
-            mean_x, mean_y = polar_to_cartesian(gp.x_eval, gp.mean)
-            self.dynamic_plot(key, mean_x, mean_y, **kwargs, visible=show_confidence)
+            self.dynamic_plot(key, *polar_to_cartesian(gp.x_eval, gp.mean), **kwargs, visible=show_confidence)
         elif self.mode == "polar":
             self.dynamic_plot(key, gp.x_eval, gp.mean, **kwargs, visible=show_confidence)
         
@@ -512,10 +407,8 @@ class SimulationPlotter(InteractivePlotter):
         kwargs = dict(color=color, linestyle="-", linewidth=1)
         lower, upper = gp.confidence_boundary()
         if self.mode == "real":
-            lower = polar_to_cartesian(gp.x_eval, lower)
-            upper = polar_to_cartesian(gp.x_eval, upper)
-            self.dynamic_plot(key + "_lower", *lower, **kwargs, visible=show_boundary)
-            self.dynamic_plot(key + "_upper", *upper, **kwargs, visible=show_boundary)
+            self.dynamic_plot(key + "_lower", *polar_to_cartesian(gp.x_eval, lower), **kwargs, visible=show_boundary)
+            self.dynamic_plot(key + "_upper", *polar_to_cartesian(gp.x_eval, upper), **kwargs, visible=show_boundary)
         elif self.mode == "polar":
             self.dynamic_plot(key + "_lower", gp.x_eval, lower, **kwargs, visible=show_boundary)
             self.dynamic_plot(key + "_upper", gp.x_eval, upper, **kwargs, visible=show_boundary)
@@ -524,26 +417,20 @@ class SimulationPlotter(InteractivePlotter):
         key = "plot_confidence:{}:points".format(name)
         kwargs_lower = dict(**self.args_scatter(2), color=color_lower)
         kwargs_upper = dict(**self.args_scatter(2), color=color_upper)
-        data_lower = gp.lower_points
-        data_upper = gp.upper_points
         if self.mode == "real":
-            data_lower = polar_to_cartesian(data_lower[0], data_lower[1])
-            data_upper = polar_to_cartesian(data_upper[0], data_upper[1])
-            self.dynamic_plot(key + "_lower", data_lower[0], data_lower[1], **kwargs_lower, visible=show_points)
-            self.dynamic_plot(key + "_upper", data_upper[0], data_upper[1], **kwargs_upper, visible=show_points)
+            self.dynamic_plot(key + "_lower", *polar_to_cartesian(*gp.lower_points), **kwargs_lower, visible=show_points)
+            self.dynamic_plot(key + "_upper", *polar_to_cartesian(*gp.upper_points), **kwargs_upper, visible=show_points)
         elif self.mode == "polar":
-            self.dynamic_plot(key + "_lower", data_lower[0], data_lower[1], **kwargs_lower, visible=show_points)
-            self.dynamic_plot(key + "_upper", data_upper[0], data_upper[1], **kwargs_upper, visible=show_points)
+            self.dynamic_plot(key + "_lower", *gp.lower_points, **kwargs_lower, visible=show_points)
+            self.dynamic_plot(key + "_upper", *gp.upper_points, **kwargs_upper, visible=show_points)
         
         # highlight discretization pixels of confidence bounds
         key = "plot_confidence:{}:pixels".format(name)
         kwargs_lower = dict(color=color_lower, alpha=0.2)
         kwargs_upper = dict(color=color_upper, alpha=0.2)
-        data_lower = gp.lower_points
-        data_upper = gp.upper_points
         if self.mode == "real":
-            patches_lower = self.highlight_pixels(data_lower)
-            patches_upper = self.highlight_pixels(data_upper)
+            patches_lower = self.highlight_pixels(gp.lower_points)
+            patches_upper = self.highlight_pixels(gp.upper_points)
             self.dynamic_patch_collection(key + "_lower", patches_lower, **self.args_to_facecolor(kwargs_lower), visible=show_pixels)
             self.dynamic_patch_collection(key + "_upper", patches_upper, **self.args_to_facecolor(kwargs_upper), visible=show_pixels)
         elif self.mode == "polar":
@@ -575,10 +462,9 @@ class SimulationPlotter(InteractivePlotter):
             key = "plot_points:{}:point".format(name)
             style = {**self.args_scatter(4), **kwargs}
             if self.mode == "real":
-                points = polar_to_cartesian(points[0], points[1])
-                self.dynamic_plot(key, points[0], points[1], **style, visible=show)
+                self.dynamic_plot(key, *polar_to_cartesian(*points), **style, visible=show)
             elif self.mode == "polar":
-                self.dynamic_plot(key, points[0], points[1], **style, visible=show)
+                self.dynamic_plot(key, *points, **style, visible=show)
         elif highlight == "pixelface" or highlight == "pixeledge":
             # highlight pixels containing given points
             key = "plot_points:{}:pixel".format(name)
