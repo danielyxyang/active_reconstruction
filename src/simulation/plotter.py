@@ -7,9 +7,44 @@ from matplotlib.patches import Circle, Rectangle, Wedge, Polygon
 from IPython.display import display
 
 import parameters as params
+from algorithms.algorithms import TRUE_ALGORITHM
 from utils.math import polar_to_cartesian, cartesian_to_polar, polar_to_pixel
 from utils.plotting import MultipleTicks
 
+WORLD_COLORS = {
+    "grid": "gray",
+    "camera": "blue",
+    "object": "red",
+    "confidence": "gray",
+    "confidence_lower": "dimgray",
+    "confidence_upper": "darkgray",
+}
+ALGORITHM_COLORS = {
+    # greedy algorithm, observation-based objective function
+    TRUE_ALGORITHM:                   "darkred",
+    "Greedy-ObservedSurface":         WORLD_COLORS["object"],
+    "Greedy-ObservedConfidenceLower": WORLD_COLORS["confidence_lower"],
+    "Greedy-ObservedConfidenceUpper": WORLD_COLORS["confidence_upper"],
+    # greedy algorithm, intersection-based objective function
+    "Greedy-IntersectionOcclusionAware": "lime",
+    "Greedy-Intersection":               "limegreen",
+    "Greedy-Intersection_cf":            "limegreen",
+    # greedy algorithm, confidence-based objective function
+    "Greedy-Confidence":                  "orange",
+    "Greedy-Confidence_cf":               "orange",
+    "Greedy-ConfidenceSimple":            "darkorange",
+    "Greedy-ConfidenceSimple_cf":         "darkorange",
+    "Greedy-ConfidenceSimplePolar":       "gold",
+    "Greedy-ConfidenceSimplePolar_cf":    "gold",
+    "Greedy-ConfidenceSimpleWeighted_cf": "goldenrod",
+    # greedy algorithm, uncertainty-based objective function
+    "Greedy-Uncertainty":         "steelblue",
+    "Greedy-Uncertainty_cf":      "steelblue",
+    "Greedy-UncertaintyPolar":    "deepskyblue",
+    "Greedy-UncertaintyPolar_cf": "deepskyblue",
+    # two-phase algorithm
+    "TwoPhase-ConfidenceSimple-Uncertainty": "magenta",
+}
 
 class Plotter():
     interactive = False
@@ -20,14 +55,6 @@ class Plotter():
 
     def __init__(self, mode=None, **kwargs):
         self.mode = mode
-        self.colors = {
-            "grid": "gray",
-            "camera": "blue",
-            "object": "red",
-            "confidence": "gray",
-            "confidence_lower": "dimgray",
-            "confidence_upper": "darkgray",
-        }
         self.fig = None
         self.axis = None # currently active axis
         self.axes = {} # dictionary of all axes
@@ -216,7 +243,7 @@ class Plotter():
     # PLOTTING METHODS
 
     def plot_grid(self, show_grid=True):
-        color = self.colors["grid"]
+        color = WORLD_COLORS["grid"]
 
         kwargs = dict(color=color, linestyle="-", linewidth=0.2, alpha=0.5)
         # TODO improve
@@ -273,7 +300,7 @@ class Plotter():
 
     def plot_camera(self, camera, show_camera=True, show_los=True, show_fov=True, show_view_circle=True, color=None, name=None):
         if color is None:
-            color = self.colors["camera"]
+            color = WORLD_COLORS["camera"]
         
         x, y = polar_to_cartesian(camera.theta, params.CAM_D)
 
@@ -376,7 +403,7 @@ class Plotter():
             self.static(key, lambda: self.axis.axhline(params.CAM_D, **kwargs), visible=show_view_circle)
 
     def plot_object(self, obj, show_object=True, show_points=False, show_pixels=False, show_bounds=True, show_center=True, n=200, name=None):
-        color = self.colors["object"]
+        color = WORLD_COLORS["object"]
 
         # plot object surface
         key = "plot_object:{}:surface".format(name)
@@ -423,10 +450,9 @@ class Plotter():
             self.static(key + "_upper", lambda: self.axis.axhline(params.OBJ_D_MAX, **kwargs), visible=show_bounds)
 
     def plot_confidence(self, gp, show_confidence=True, show_boundary=False, show_points=False, show_pixels=False, name=None):
-
-        color = self.colors["confidence"]
-        color_lower = self.colors["confidence_lower"]
-        color_upper = self.colors["confidence_upper"]
+        color = WORLD_COLORS["confidence"]
+        color_lower = WORLD_COLORS["confidence_lower"]
+        color_upper = WORLD_COLORS["confidence_upper"]
 
         # plot GP mean
         key = "plot_confidence:{}:mean".format(name)
@@ -507,8 +533,8 @@ class Plotter():
     def plot_observations(self, observations, show=True, color=None, name=None):
         if color is None:
             color = "green"
-        elif color in self.colors.keys():
-            color = self.colors[color]
+        elif color in WORLD_COLORS.keys():
+            color = WORLD_COLORS[color]
 
         # highlight all observed surface points
         key = "plot_observations:{}".format(name)
@@ -522,8 +548,8 @@ class Plotter():
     def plot_points(self, points, highlight="point", show=True, name=None, **kwargs):
         if "color" not in kwargs.keys():
             kwargs["color"] = "orange"
-        elif kwargs["color"] in self.colors.keys():
-            kwargs["color"] = self.colors[kwargs["color"]]
+        elif kwargs["color"] in WORLD_COLORS.keys():
+            kwargs["color"] = WORLD_COLORS[kwargs["color"]]
 
         if highlight == "point":
             # highlight given points

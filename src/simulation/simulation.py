@@ -15,7 +15,7 @@ class Simulation():
 
         self.n_marginal = [] # store number of newly observed points
         self.n_marginal_opt = [] # store largest possible number of newly observed points
-        self.algorithm_opt = build_algorithms(object=object)[TRUE_ALGORITHM]["algorithm"]
+        self.algorithm_opt = build_algorithms(object=object)[TRUE_ALGORITHM]
         self.algorithm_opt.link(self.algorithm)
 
         self.reset()
