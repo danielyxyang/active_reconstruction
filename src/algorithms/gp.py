@@ -138,7 +138,7 @@ class GaussianProcess():
     
 
 def build_mean():
-    return lambda phi: np.full_like(phi, fill_value=params.OBJ_D_AVG, dtype=float)
+    return lambda phi: np.full_like(phi, fill_value=params.OBJ_D_AVG(), dtype=float)
 
 
 def build_kernel_rbf(sigma=1, l=1):

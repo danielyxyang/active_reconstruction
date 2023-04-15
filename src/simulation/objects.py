@@ -208,9 +208,9 @@ class EllipseObject(Object):
             a: semi-major axis aligned with x-axis (defaults to average of object bounds)
             b: semi-minor axis aligned with y-axis (defaults to average of object bounds)
         """
-        a = params.OBJ_D_AVG if a is None else a
+        a = params.OBJ_D_AVG() if a is None else a
         a = np.clip(a, params.OBJ_D_MIN, params.OBJ_D_MAX)
-        b = params.OBJ_D_AVG if b is None else b
+        b = params.OBJ_D_AVG() if b is None else b
         b = np.clip(b, params.OBJ_D_MIN, params.OBJ_D_MAX)
         args = dict(a=a, b=b)
         def obj_f(phi):
@@ -227,7 +227,7 @@ class SquareObject(Object):
         Args:
             width: width (defaults to twice the average of object bounds)
         """
-        width = 2*params.OBJ_D_AVG if width is None else width
+        width = 2*params.OBJ_D_AVG() if width is None else width
         width = np.clip(width, 2 * params.OBJ_D_MIN, 2 * params.OBJ_D_MAX / np.sqrt(2))
         args = dict(width=width)
         def obj_f(phi):
@@ -251,7 +251,7 @@ class FlowerObject(Object):
         frequency = int(frequency)
         args=dict(frequency=frequency, amplitude=amplitude)
         def obj_f(phi):
-            return amplitude * np.cos(frequency * phi) + params.OBJ_D_AVG
+            return amplitude * np.cos(frequency * phi) + params.OBJ_D_AVG()
         super().__init__(obj_f, args=args, **kwargs)
 
 

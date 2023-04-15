@@ -330,8 +330,8 @@ class Plotter():
         key = "plot_camera:{}:fov".format(name)
         kwargs_boundary = dict(color=color, alpha=0.4)
         kwargs_region = dict(color=color, alpha=0.1)
-        beta1 = params.CAM_FOV_RAD / 2
-        beta2 = -params.CAM_FOV_RAD / 2
+        beta1 = params.CAM_FOV / 2
+        beta2 = -params.CAM_FOV / 2
         if self.mode == "real":
             los = camera.theta + np.pi
             patches = [

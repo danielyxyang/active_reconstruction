@@ -117,7 +117,7 @@ class Camera():
             list: N-dimensional boolean array
         """
         beta, d = self.polar_to_camera(*points)
-        return np.logical_and(np.abs(beta) <= params.CAM_FOV_RAD/2, d <= params.CAM_DOF if check_dof else True)
+        return np.logical_and(np.abs(beta) <= params.CAM_FOV/2, d <= params.CAM_DOF if check_dof else True)
     
     def is_not_occluded(self, points, object):
         """Check whether the points are not occluded by the object points.
