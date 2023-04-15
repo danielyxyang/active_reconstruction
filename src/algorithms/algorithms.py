@@ -46,6 +46,13 @@ class Algorithm():
 
     def compute_nbv(self):
         return 0
+    
+    @property
+    def data(self):
+        return {
+            Objective.CONFIDENCE: self.gp,
+            Objective.OBSERVATIONS: self.observations,
+        }
 
     # HELPER METHODS
 
@@ -65,10 +72,7 @@ class GreedyAlgorithm(Algorithm):
 
     def compute_nbv(self, with_estimates=False):
         # find NBV
-        estimates = self.objective(self.thetas, {
-            Objective.CONFIDENCE: self.gp,
-            Objective.OBSERVATIONS: self.observations,
-        })
+        estimates = self.objective(self.thetas, self.data)
         nbv = self.thetas[np.argmax(estimates)]
         # return NBV and optionally estimates
         if not with_estimates:
@@ -77,10 +81,7 @@ class GreedyAlgorithm(Algorithm):
             return nbv, estimates
     
     def compute_estimate_points(self, camera):
-        return self.objective.compute_estimate_points(camera, {
-            Objective.CONFIDENCE: self.gp,
-            Objective.OBSERVATIONS: self.observations,
-        })
+        return self.objective.compute_estimate_points(camera, self.data)
 
 
 class TwoPhaseAlgorithm(Algorithm):
@@ -97,21 +98,12 @@ class TwoPhaseAlgorithm(Algorithm):
 
     def compute_nbv(self, with_estimates=False):
         # phase 1
-        estimates1 = self.objective1(self.thetas, {
-            Objective.CONFIDENCE: self.gp,
-            Objective.OBSERVATIONS: self.observations,
-        })
+        estimates1 = self.objective1(self.thetas, self.data)
         nbv1 = self.thetas[np.argmax(estimates1)]
-        nbv1_phi1, nbv1_phi2 = self.objective1.get_summation_interval(Camera(nbv1), {
-            Objective.CONFIDENCE: self.gp,
-            Objective.OBSERVATIONS: self.observations,
-        })
+        nbv1_phi1, nbv1_phi2 = self.objective1.get_summation_interval(Camera(nbv1), self.data)
         mask = is_in_range(self.thetas, (nbv1_phi1[0], nbv1_phi2[0]), mod=2*np.pi)
         # phase 2
-        estimates2 = self.objective2(self.thetas, {
-            Objective.CONFIDENCE: self.gp,
-            Objective.OBSERVATIONS: self.observations,
-        })
+        estimates2 = self.objective2(self.thetas, self.data)
         estimates2[np.logical_not(mask)] = np.nan
         nbv2 = self.thetas[np.nanargmax(estimates2)]
         # return NBV and optionally estimates
