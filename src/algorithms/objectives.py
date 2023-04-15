@@ -106,7 +106,7 @@ class ObservedSurfaceMarginalObjective(Objective):
         
         # compute marginal observed surface points
         observed_points = camera.compute_observation(self.obj.surface_points)
-        return setdiff2d(observed_points.T, observations.T).T
+        return setdiff2d(observed_points.T, observations.observed_points.T).T
 
 
 class ObservedSurfaceObjective(Objective):

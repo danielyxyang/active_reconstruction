@@ -32,7 +32,7 @@ class Simulation():
 
     def take_measurement(self):
         # compute number of marginal observations
-        n_marginal_observation = len(setdiff2d(self.camera.observation.T, self.algorithm.observations.T))
+        n_marginal_observation = len(setdiff2d(self.camera.observation.T, self.algorithm.observations.observed_points.T))
         if n_marginal_observation == 0:
             self.converged = True
             return
@@ -41,7 +41,7 @@ class Simulation():
         # compute regret
         camera_opt = Camera(theta=self.algorithm_opt.compute_nbv())
         camera_opt.observe(self.obj.surface_points)
-        n_marginal_observation_opt = len(setdiff2d(camera_opt.observation.T, self.algorithm.observations.T))
+        n_marginal_observation_opt = len(setdiff2d(camera_opt.observation.T, self.algorithm.observations.observed_points.T))
         self.n_marginal_opt.append(n_marginal_observation_opt)
 
         self.algorithm.add_observation(self.camera.observation, noise=params.OBS_NOISE)

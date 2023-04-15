@@ -514,10 +514,10 @@ class Plotter():
         key = "plot_observations:{}".format(name)
         kwargs = dict(**self.args_scatter(2), color=color)
         if self.mode == "real":
-            self.plot_points(observations, highlight="point", show=show, **kwargs, name=key)
-            self.plot_points(observations, highlight="pixelface", show=show, color=color, alpha=0.4, name=key)
+            self.plot_points(observations.observed_points, highlight="point", show=show, **kwargs, name=key)
+            self.plot_points(observations.observed_points, highlight="pixelface", show=show, color=color, alpha=0.4, name=key)
         elif self.mode == "polar":
-            self.plot_points(observations, highlight="point", show=show, **kwargs, name=key)
+            self.plot_points(observations.observed_points, highlight="point", show=show, **kwargs, name=key)
 
     def plot_points(self, points, highlight="point", show=True, name=None, **kwargs):
         if "color" not in kwargs.keys():

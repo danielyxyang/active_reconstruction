@@ -15,6 +15,7 @@ from algorithms.objectives import (
     UncertaintyObjective,
     UncertaintyPolarObjective,
 )
+from algorithms.observations import Observations
 from simulation.camera import Camera
 from utils.math import is_in_range
 
@@ -25,19 +26,19 @@ class Algorithm():
     """Base class for algorithms."""
     
     def __init__(self, gp=None):
-        self.observations = np.array([[], []])
+        self.observations = Observations()
         self.gp = gp
 
     def reset(self, algorithm=None):
         if algorithm is None:
-            self.observations = np.array([[], []])
+            self.observations.reset()
             self.gp.reset()
         else:
             self.observations = algorithm.observations
             self.gp = algorithm.gp
 
     def add_observation(self, observation, noise=0):
-        self.observations = np.concatenate([self.observations, observation], axis=-1)
+        self.observations.update(observation)
         self.gp.update(*observation, noise=noise)
 
     def compute_nbv(self):
