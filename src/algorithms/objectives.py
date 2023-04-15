@@ -86,6 +86,12 @@ class Objective():
         c2 = c2[:, is_in_range(c2[0], (camera.theta, fov_limit[0]), mod=2*np.pi)]
         c2 = c2[:, np.argmin(camera.polar_to_camera(*c2)[1])]
         return c1, c2
+    
+    @staticmethod
+    def get_simple_FOV_endpoint(camera):
+        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
+        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
+        return c1, c2
 
 
 class ObservedSurfaceMarginalObjective(Objective):
@@ -194,9 +200,7 @@ class IntersectionObjective(Objective):
         return estimate
     
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
-        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
-        return c1, c2
+        return Objective.get_simple_FOV_endpoint(camera)
 
 
 class ConfidenceObjective(Objective):
@@ -274,9 +278,7 @@ class ConfidenceSimpleObjective(Objective):
         return estimate
 
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
-        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
-        return c1, c2
+        return Objective.get_simple_FOV_endpoint(camera)
 
 
 class ConfidencePolarObjective(Objective):
@@ -314,9 +316,7 @@ class ConfidencePolarObjective(Objective):
         return estimate
 
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
-        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
-        return c1, c2
+        return Objective.get_simple_FOV_endpoint(camera)
 
 
 class ConfidenceSimpleWeightedObjective(Objective):
@@ -346,9 +346,7 @@ class ConfidenceSimpleWeightedObjective(Objective):
         return estimate
     
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
-        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
-        return c1, c2
+        return Objective.get_simple_FOV_endpoint(camera)
 
 
 # class ConfidenceSimpleWeighted2Objective(Objective):
@@ -410,9 +408,7 @@ class UncertaintyObjective(Objective):
         return estimate
     
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
-        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
-        return c1, c2
+        return Objective.get_simple_FOV_endpoint(camera)
 
 
 class UncertaintyPolarObjective(Objective):
@@ -444,9 +440,7 @@ class UncertaintyPolarObjective(Objective):
         return estimate
     
     def get_boundary(self, camera, data):
-        c1 = camera.camera_to_polar(params.CAM_FOV_RAD/2, params.CAM_DOF)
-        c2 = camera.camera_to_polar(-params.CAM_FOV_RAD/2, params.CAM_DOF)
-        return c1, c2
+        return Objective.get_simple_FOV_endpoint(camera)
     
 
 # class TemplateObjective(Objective):
