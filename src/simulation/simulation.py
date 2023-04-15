@@ -1,7 +1,8 @@
 import numpy as np
 
 import parameters as params
-from algorithms.algorithms import build_algorithms, TRUE_ALGORITHM
+from algorithms.gp import GaussianProcess, build_mean
+from algorithms.algorithms import Algorithm, build_algorithms, ALGORITHMS, TRUE_ALGORITHM
 from simulation.camera import Camera
 from utils.math import setdiff2d
 
@@ -20,7 +21,7 @@ class Simulation():
 
         self.reset()
 
-    # METHODS TO RUN SIMULATION
+    # LOW-LEVEL METHODS TO RUN SIMULATION
 
     def reset(self):
         self.algorithm.reset()
@@ -50,14 +51,26 @@ class Simulation():
         self.camera.move(theta)
         self.camera.observe(self.obj.surface_points)
 
+    def is_converged(self):
+        return self.converged
+
+    # HIGH-LEVEL METHODS TO RUN SIMULATION
+
     def step(self, nbv=None):
         if nbv is None:
             nbv = self.algorithm.compute_nbv()
         self.move_camera(nbv)
         self.take_measurement()
-
-    def is_converged(self):
-        return self.converged
+    
+    def run(self, thetas=None, n=None):
+        if thetas is not None:
+            for theta in thetas:
+                self.step(nbv=theta)
+        elif n is not None:
+            for _ in range(n):
+                self.step()
+        nbv = self.algorithm.compute_nbv()
+        self.move_camera(nbv)
         
     # METHODS TO EVALUATE SIMULATION
 
@@ -66,6 +79,20 @@ class Simulation():
     
     def results(self):
         return SimulationResults(self.n_marginal, self.n_marginal_opt, len(self.obj.surface_points.T))
+
+    # STATIC METHODS
+
+    @staticmethod
+    def build(object, camera, kernel, algorithm=None):
+        # build algorithm
+        build_gp = lambda: GaussianProcess(build_mean(), kernel, discretize=True)
+        if algorithm in ALGORITHMS:
+            algorithm = build_algorithms(build_gp=build_gp, object=object)[algorithm]
+        else:
+            algorithm = Algorithm(gp=build_gp())
+        # build simulation
+        simulation = Simulation(object, camera, algorithm)
+        return simulation
 
 
 class SimulationResults():
