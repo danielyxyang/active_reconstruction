@@ -15,7 +15,8 @@ class Simulation():
 
         self.n_marginal = [] # store number of newly observed points
         self.n_marginal_opt = [] # store largest possible number of newly observed points
-        self.algorithm_opt = build_algorithms(build_gp=lambda: algorithm.gp, object=object)[TRUE_ALGORITHM]["algorithm"]
+        self.algorithm_opt = build_algorithms(object=object)[TRUE_ALGORITHM]["algorithm"]
+        self.algorithm_opt.link(self.algorithm)
 
         self.reset()
 
@@ -23,7 +24,6 @@ class Simulation():
 
     def reset(self):
         self.algorithm.reset()
-        self.algorithm_opt.reset()
         self.camera.observe(self.obj.surface_points)
         self.converged = False
 
@@ -45,7 +45,6 @@ class Simulation():
         self.n_marginal_opt.append(n_marginal_observation_opt)
 
         self.algorithm.add_observation(self.camera.observation, noise=params.OBS_NOISE)
-        self.algorithm_opt.reset(algorithm=self.algorithm) # inject changes into algorithm_opt
 
     def move_camera(self, theta):
         self.camera.move(theta)

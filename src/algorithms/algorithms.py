@@ -28,21 +28,31 @@ class Algorithm():
     def __init__(self, gp=None):
         self.observations = Observations()
         self.gp = gp
+        self.linked = False
 
-    def reset(self, algorithm=None):
-        if algorithm is None:
-            self.observations.reset()
-            self.gp.reset()
-        else:
-            self.observations = algorithm.observations
-            self.gp = algorithm.gp
+    def reset(self):
+        if self.linked:
+            print("WARNING: not possible to reset linked algorithm")
+            return
+        self.observations.reset()
+        self.gp.reset()
 
     def add_observation(self, observation, noise=0):
+        if self.linked:
+            print("WARNING: not possible to add observations to linked algorithm")
+            return
         self.observations.update(observation)
         self.gp.update(*observation, noise=noise)
 
     def compute_nbv(self):
         return 0
+
+    # HELPER METHODS
+
+    def link(self, algorithm):
+        self.observations = algorithm.observations
+        self.gp = algorithm.gp
+        self.linked = True
 
 
 class GreedyAlgorithm(Algorithm):
