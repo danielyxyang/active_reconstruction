@@ -178,8 +178,8 @@ class TwoPhaseAlgorithm(Algorithm):
 def build_algorithms(build_gp=lambda: None, object=None):
     return LazyDict({
         # greedy algorithm, observation-based objective function
-        TRUE_ALGORITHM:                   lambda: GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=build_gp()),
         "Greedy-ObservedSurface":         lambda: GreedyAlgorithm(ObservedSurfaceObjective(obj=object), gp=build_gp()),
+        TRUE_ALGORITHM:                   lambda: GreedyAlgorithm(ObservedSurfaceMarginalObjective(obj=object), gp=build_gp()),
         "Greedy-ObservedConfidenceLower": lambda: GreedyAlgorithm(ObservedConfidenceLowerObjective(), gp=build_gp()),
         "Greedy-ObservedConfidenceUpper": lambda: GreedyAlgorithm(ObservedConfidenceUpperObjective(), gp=build_gp()),
         # greedy algorithm, intersection-based objective function

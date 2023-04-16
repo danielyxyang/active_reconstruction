@@ -22,8 +22,8 @@ WORLD_COLORS = {
 
 ALGORITHM_COLORS = {
     # greedy algorithm, observation-based objective function
-    TRUE_ALGORITHM:                          "darkred",
     "Greedy-ObservedSurface":                WORLD_COLORS["object"],
+    TRUE_ALGORITHM:                          "darkred",
     "Greedy-ObservedConfidenceLower":        WORLD_COLORS["confidence_lower"],
     "Greedy-ObservedConfidenceUpper":        WORLD_COLORS["confidence_upper"],
     # greedy algorithm, intersection-based objective function
