@@ -54,12 +54,12 @@ class ObjectSelector(widgets.VBox, widgets.widget_description.DescriptionWidget,
             )),
             (PolygonObject.name, widgets.interactive(
                 PolygonObject.build,
-                name=widgets.Dropdown(options=PolygonObject.polygon_names),
+                name=widgets.Dropdown(options=PolygonObject.polygon_names, index=1),
             )),
         ]
 
         # create widget for selecting object
-        self.dropdown_objects = widgets.Dropdown(options=options, description="object")
+        self.dropdown_objects = widgets.Dropdown(options=options, index=3, description="object")
         self.dropdown_objects.observe(self.__change_obj, names="value")
 
         # create widget for configuring selected object
