@@ -111,13 +111,13 @@ class Profiler():
         print("  {:{}} {}".format("Total:", max_length + 1, "{:4.2f}s".format(total)))
         
     @contextlib.contextmanager
-    def cm(self, name=None, disjoint=False):
+    def cm(self, name=None, disjoint=True):
         """Create context manager for profiling.
         
         Args:
             name (str): Name of the profiling session.
             disjoint (bool): Flag whether recorded time should be disjoint from
-                other times recorded with context manager. Defaults to False."""
+                other times recorded with context manager. Defaults to True."""
         if name is None:
             # simple profiling
             self.start()
