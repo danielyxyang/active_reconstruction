@@ -17,6 +17,7 @@ WORLD_COLORS = {
     "confidence":       "gray",
     "confidence_lower": "dimgray",
     "confidence_upper": "darkgray",
+    "observations":     "green",
 }
 
 ALGORITHM_COLORS = {
@@ -441,7 +442,7 @@ class SimulationPlotter(DynamicPlotter):
 
     def plot_observations(self, observations, show=True, color=None, name=None):
         if color is None:
-            color = "green"
+            color = WORLD_COLORS["observations"]
         elif color in WORLD_COLORS.keys():
             color = WORLD_COLORS[color]
 
