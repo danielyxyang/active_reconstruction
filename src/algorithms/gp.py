@@ -150,7 +150,7 @@ def build_kernel_rbf(sigma=1, l=1):
     return kernel
 
 
-def build_kernel_periodic(sigma=1, l=1):
+def build_kernel_rbf_periodic(sigma=1, l=1):
     k = ExpSineSquared(length_scale=l, periodicity=2*np.pi)
     def kernel(X1, X2):
         return sigma**2 * k(X1, X2)

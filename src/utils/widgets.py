@@ -6,7 +6,7 @@ from traitlets import Any
 import parameters as params
 from algorithms.gp import (
     build_kernel_rbf,
-    build_kernel_periodic,
+    build_kernel_rbf_periodic,
     build_kernel_matern,
     build_kernel_matern_periodic,
     build_kernel_matern_periodic_approx,
@@ -104,8 +104,8 @@ class KernelSelector(widgets.VBox, widgets.widget_description.DescriptionWidget,
                 sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
                 l=widgets.FloatSlider(value=0.2, min=0.02, max=2, step=0.02),
             )),
-            ("periodic", widgets.interactive(
-                build_kernel_periodic,
+            ("rbf_periodic", widgets.interactive(
+                build_kernel_rbf_periodic,
                 sigma=widgets.FloatSlider(value=(params.OBJ_D_MAX - params.OBJ_D_MIN) / 4, min=0, max=10, step=0.1),
                 l=widgets.FloatSlider(value=0.2, min=0.02, max=2, step=0.02),
             )),
