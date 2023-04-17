@@ -13,7 +13,8 @@ OBJ_D_AVG = lambda: (OBJ_D_MAX + OBJ_D_MIN) / 2
 # camera
 CAM_D = 10 # [m]
 CAM_DOF = 10 # [m] 
-CAM_FOV = math.radians(35) # [rad]
+CAM_FOV = 35 # [deg]
+CAM_FOV_RAD = lambda: math.radians(CAM_FOV) # [rad]
 OBS_NOISE = 0.2 # standard deviation of observation noise
 
 
