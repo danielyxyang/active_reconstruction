@@ -1,5 +1,5 @@
 ipympl
-ipython==8.*        # required for display with kwarg clear
+ipython
 ipywidgets
 matplotlib
 numpy
