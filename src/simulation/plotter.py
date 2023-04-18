@@ -70,7 +70,8 @@ class SimulationPlotter(DynamicPlotter):
         self.__axes_context = []
 
         # set style
-        self.fig.set_size_inches(figsize)
+        if figsize is not None:
+            self.fig.set_size_inches(figsize)
         if self.mode == "real":
             # set descriptions
             self.axis.set_title("Real World" if title is None else title)
