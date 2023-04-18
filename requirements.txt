@@ -7,3 +7,7 @@ pandas
 scikit-learn
 scipy
 tqdm
+
+tikzplotlib
+imageio
+pygifsicle
