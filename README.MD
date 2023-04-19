@@ -28,6 +28,11 @@ There are two options for running the interactive notebooks.
 4. Set the `ENV` parameter in the first cell to `"LOCAL"`.
 5. Run all cells.
 
+> If the notebooks do not work as expected, try out the exact Python package versions.
+> ```
+> pip install -r requirements_strict.txt
+> ```
+
 ### COLAB (Google Colab)
 
 1. Open the desired notebook from the `notebooks` folder in Google Colab.
