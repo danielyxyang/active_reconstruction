@@ -291,6 +291,8 @@ class PlotSaver():
         
         # make final adjustments
         for fig, _ in plots:
+            if fig is None:
+                continue
             # set style
             PlotSaver.set_style(fig.gca(), **kwargs)
             # set sizing
@@ -308,7 +310,7 @@ class PlotSaver():
                 t = (1 - fig.subplotpars.top) * fig.get_figheight()
                 return np.array([l, r, b, t])
             # compute max required fixed side-space
-            l_max, r_max, b_max, t_max = np.max([get_padding(fig) for fig, _ in plots], axis=0)
+            l_max, r_max, b_max, t_max = np.max([get_padding(fig) for fig, _ in plots if fig is not None], axis=0)
             horiz = [Size.Fixed(l_max), Size.Scaled(1), Size.Fixed(r_max)]
             verti = [Size.Fixed(b_max), Size.Scaled(ratio), Size.Fixed(t_max)]
             # compute new height to adapt ratio to ratio of axes instead of figure
@@ -317,6 +319,8 @@ class PlotSaver():
             axes_height = axes_width * ratio
             fig_height = axes_height + t_max + b_max
             for fig, _ in plots:
+                if fig is None:
+                    continue
                 # place axis in divider
                 divider = Divider(fig, (0, 0, 1, 1), horiz, verti, aspect=True)
                 fig.gca().set_axes_locator(divider.new_locator(nx=1, ny=1))
@@ -325,28 +329,27 @@ class PlotSaver():
 
         # show figures
         if show or PlotSaver.save_all:
-            rows, cols = [], []
-            for fig, name in plots:
-                out = widgets.Output(layout=dict(width="{}in".format(fig.get_figwidth()+0.5), min_width="2.5in", overflow="auto"))
+            grid = widgets.GridspecLayout(n_rows=int(np.ceil(len(plots)/ncols)), n_columns=ncols, width="{}in".format((figsize[0]+0.5)*ncols))
+            for i, (fig, name) in enumerate(plots):
+                if fig is None:
+                    continue
+                out = widgets.Output(layout=dict(overflow="auto"))
                 with out:
                     if PlotSaver.interactive and not PlotSaver.save_all:
                         display(fig.canvas)
                     else:
                         display(fig)
                     display(widgets.Label("{:3}: {}".format(fig.number, name), layout=dict(overflow="auto"), style=dict(font_family="monospace", font_size="10pt")))
-                cols.append(out)
-                if len(cols) == ncols:
-                    rows.append(widgets.HBox(cols))
-                    cols = []
-            if len(cols) > 0:
-                rows.append(widgets.HBox(cols))
-            display(*rows)
+                grid[i // ncols, i % ncols] = out
+            display(grid)
 
         # save figures
         if save or PlotSaver.save_all:
             format = PlotSaver.save_all_format if PlotSaver.save_all else format
             if format in ["png", "tikz", "pgf", "pdf"]:
                 for fig, name in plots:
+                    if fig is None:
+                        continue
                     # setup output path
                     filepath = os.path.join(PlotSaver.output, format, name)
                     os.makedirs(os.path.dirname(filepath), exist_ok=True)
