@@ -8,12 +8,13 @@ from utils.tools import Profiler
 
 
 class GaussianProcess():
-    def __init__(self, mean_func, kernel_func, x_eval=None, period=2*np.pi, n_std=2, discretize=False):
+    def __init__(self, mean_func, kernel_func, x_eval=None, period=2*np.pi, n_std=2, n_dims=1, discretize=False):
         self.mean_func = mean_func
         self.kernel_func = kernel_func
         self.x_eval = x_eval if x_eval is not None else np.linspace(0, 2*np.pi, 1000)
         self.period = period
         self.n_std = n_std # number of standard deviations for confidence bound
+        self.n_dims = n_dims # number of feature dimensions
         
         self.x = None
         self.y = None
@@ -31,9 +32,9 @@ class GaussianProcess():
     def reset(self):
         """Reset Gaussian process to prior."""
         # reset observations
-        self.x = np.array([])
-        self.y = np.array([])
-        self.noise = np.array([])
+        self.x = np.empty(0) if self.n_dims == 1 else np.empty((0, self.n_dims))
+        self.y = np.empty(0)
+        self.noise = np.empty(0)
         # compute prior distribution
         self.mean, self.cov = self.evaluate()
         # discretize confidence bounds
@@ -43,11 +44,11 @@ class GaussianProcess():
     def update(self, x1, y1, noise=0):
         """Update Gaussian process with observations to posterior."""
         if np.isscalar(noise):
-            noise = np.full_like(x1, noise)
+            noise = np.full(len(x1), noise)
         # add observations
-        self.x = np.concatenate([self.x, x1])
-        self.y = np.concatenate([self.y, y1])
-        self.noise = np.concatenate([self.noise, noise])
+        self.x = np.append(self.x, x1, axis=0)
+        self.y = np.append(self.y, y1)
+        self.noise = np.append(self.noise, noise)
         # compute posterior distribution
         self.mean, self.cov = self.evaluate()
         # discretize confidence bounds
@@ -61,13 +62,13 @@ class GaussianProcess():
         # compute posterior mean and covariance
         # reference: https://peterroelants.github.io/posts/gaussian-process-tutorial/
         noise = (self.noise ** 2) * np.eye(len(self.x))
-        sigma11 = self.kernel_func(self.x[:, np.newaxis], self.x[:, np.newaxis]) + noise
-        sigma12 = self.kernel_func(self.x[:, np.newaxis], x_eval[:, np.newaxis])
-        sigma22 = self.kernel_func(x_eval[:, np.newaxis], x_eval[:, np.newaxis])
+        sigma11 = self.kernel_func(self.x, self.x) + noise
+        sigma12 = self.kernel_func(self.x, x_eval)
+        sigma22 = self.kernel_func(x_eval, x_eval)
         reg = gamma * np.eye(len(self.x))
         solved = np.linalg.solve(sigma11 + reg, sigma12).T
-        mean = solved @ (self.y - self.mean_func(self.x)) + self.mean_func(x_eval)
-        cov = sigma22 - (solved @ sigma12)
+        mean = self.mean_func(x_eval) + solved @ (self.y - self.mean_func(self.x))
+        cov = sigma22 - solved @ sigma12
         return mean, cov
     
     def sample(self, x_eval=None, interp=False, n=1):
@@ -146,6 +147,7 @@ def build_mean():
 def build_kernel_rbf(sigma=1, l=1):
     k = RBF(length_scale=l)
     def kernel(X1, X2):
+        X1, X2 = _atleast_2d(X1, X2)
         return sigma**2 * k(X1, X2)
     return kernel
 
@@ -153,6 +155,7 @@ def build_kernel_rbf(sigma=1, l=1):
 def build_kernel_rbf_periodic(sigma=1, l=1):
     k = ExpSineSquared(length_scale=l, periodicity=2*np.pi)
     def kernel(X1, X2):
+        X1, X2 = _atleast_2d(X1, X2)
         return sigma**2 * k(X1, X2)
     return kernel
 
@@ -160,6 +163,7 @@ def build_kernel_rbf_periodic(sigma=1, l=1):
 def build_kernel_matern(sigma=1, l=1, nu=1.5):
     k = Matern(length_scale=l, nu=nu)
     def kernel(X1, X2):
+        X1, X2 = _atleast_2d(X1, X2)
         return sigma**2 * k(X1, X2)
     return kernel
 
@@ -167,6 +171,9 @@ def build_kernel_matern(sigma=1, l=1, nu=1.5):
 def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5, normalized=True):
     if nu == 0.5:
         def kernel(X1, X2):
+            X1, X2 = _atleast_2d(X1, X2)
+            if np.shape(X1)[1] > 1 or np.shape(X2)[1] > 1:
+                print("WARNING: not implemented to evaluate periodic Matérn kernel on non-scalar samples!") # TODO
             # normalize input to [0,2pi)
             X1 = np.asarray(X1) % (2*np.pi)
             X2 = np.asarray(X2) % (2*np.pi)
@@ -178,6 +185,9 @@ def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5, normalized=True):
         return lambda X1, X2: sigma**2/c * kernel(X1, X2)
     elif nu == 1.5:
         def kernel(X1, X2):
+            X1, X2 = _atleast_2d(X1, X2)
+            if np.shape(X1)[1] > 1 or np.shape(X2)[1] > 1:
+                print("WARNING: not implemented to evaluate periodic Matérn kernel on non-scalar samples!") # TODO
             # normalize input to [0,2pi)
             X1 = np.asarray(X1) % (2*np.pi)
             X2 = np.asarray(X2) % (2*np.pi)
@@ -191,6 +201,9 @@ def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5, normalized=True):
         return lambda X1, X2: sigma**2/c * kernel(X1, X2)
     elif nu == 2.5:
         def kernel(X1, X2):
+            X1, X2 = _atleast_2d(X1, X2)
+            if np.shape(X1)[1] > 1 or np.shape(X2)[1] > 1:
+                print("WARNING: not implemented to evaluate periodic Matérn kernel on non-scalar samples!") # TODO
             # normalize input to [0,2pi)
             X1 = np.asarray(X1) % (2*np.pi)
             X2 = np.asarray(X2) % (2*np.pi)
@@ -213,6 +226,7 @@ def build_kernel_matern_periodic(sigma=1, l=1, nu=1.5, normalized=True):
 def build_kernel_matern_periodic_approx(sigma=1, l=1, nu=1.5, n_approx=1):
     k = Matern(length_scale=l, nu=nu)
     def kernel(X1, X2):
+        X1, X2 = _atleast_2d(X1, X2)
         ks = [k(X1 + i * 2*np.pi, X2) for i in range(-n_approx, n_approx+1)]
         return sigma**2 * np.sum(ks, axis=0)
     return kernel
@@ -225,6 +239,7 @@ def build_kernel_matern_periodic_truncated(sigma=1, l=1, nu=1.5, c1=np.pi, c2=2*
     # define truncated kernel
     t = _build_truncation_function(c1, c2)
     def k_trunc(X1, X2):
+        X1, X2 = _atleast_2d(X1, X2)
         R = _compute_distances(X1, X2, l)
         return t(R) * k(X1, X2)
     # define periodic kernel
@@ -240,6 +255,7 @@ def build_kernel_matern_periodic_warped(sigma=1, l=1, nu=1.5):
     u = lambda x: np.concatenate([np.cos(x), np.sin(x)], axis=-1)
     # define periodic function
     def kernel(X1, X2):
+        X1, X2 = _atleast_2d(X1, X2)
         if np.shape(X1)[1] > 1 or np.shape(X2)[1] > 1:
             print("WARNING: Matérn kernel periodized by warping might not work for non-scalar samples!") # TODO check?
         return sigma**2 * k(u(X1), u(X2))
@@ -252,16 +268,40 @@ def eval_kernel(k, r):
 
 # HELPER FUNCTIONS
 
+def _atleast_2d(*arrays):
+    """View inputs as arrays with at least two dimensions.
+
+    Same as np.atleast_2d, but appends instead of prepends new axis to
+    1-dimensional arrays.
+    
+    Reference: numpy.core.shape_base.py::atleast_2d
+    """
+    res = []
+    for array in arrays:
+        array = np.asanyarray(array)
+        if array.ndim == 0:
+            result = array.reshape(1, 1)
+        elif array.ndim == 1:
+            result = array[:, np.newaxis] # changed
+        else:
+            result = array
+        res.append(result)
+    if len(res) == 1:
+        return res[0]
+    else:
+        return res
+
+
 def _compute_distances(X1, X2, l):
     """Compute matrix with pairwise distances between X1 and X2.
+
+    Reference: sklearn.gaussian_process.kernels.py::Matern.__call__
     
     Args:
         X1: ndarray of shape (n_samples, n_features)
         X2: ndarray of shape (n_samples, n_features)
         l: length scale of the kernel
     """
-    # reference: sklearn.gaussian_process.kernels.py::Matern.__call__
-    X1 = np.atleast_2d(X1)
     l = _check_length_scale(X1, l)
     R = cdist(X1 / l, X2 / l, metric="euclidean")
     return R
