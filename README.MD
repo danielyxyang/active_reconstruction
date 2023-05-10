@@ -36,7 +36,7 @@ There are two options for running the interactive notebooks.
 ### COLAB (Google Colab)
 
 1. Open the desired notebook from the `notebooks` folder in Google Colab.
-2. Se the `ENV` parameter in the first cell to `"COLAB"`.
+2. Set the `ENV` parameter in the first cell to `"COLAB"`.
 3. Run all cells.
 
 ## License
