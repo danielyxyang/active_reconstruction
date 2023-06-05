@@ -146,6 +146,7 @@ class PlotSaver():
         ```
     """
     interactive = False
+    is_colab = False
 
     output = "."
     textwidth = 6
@@ -157,9 +158,10 @@ class PlotSaver():
     # SETUP FUNCTIONS
 
     @staticmethod
-    def set_interactive(interactive=True):
-        """Enable or disable interactive plots based on ipyml backend."""
+    def set_interactive(interactive=True, is_colab=False):
+        """Enable or disable interactive plots based on ipympl backend."""
         PlotSaver.interactive = interactive
+        PlotSaver.is_colab = is_colab
 
     @staticmethod
     def setup(output=".", textwidth=None, fontsize=None, latex_preamble="", params={}):
@@ -167,14 +169,14 @@ class PlotSaver():
             PlotSaver.output = output
         if textwidth is not None:
             PlotSaver.textwidth = textwidth
-        params_fontsize = { # default font size: 10pt
+        params_fontsize = {} if fontsize is None else { # default font size: 10pt
             "font.size": fontsize,
             "axes.titlesize": fontsize,
             "axes.labelsize": fontsize,
             "xtick.labelsize": fontsize,
             "ytick.labelsize": fontsize,
             "legend.fontsize": fontsize,
-        } if fontsize is not None else {}
+        }
         params_latex = {
             # settings for font
             "font.family": "serif",
@@ -214,6 +216,13 @@ class PlotSaver():
         PlotSaver.save_all_format = None
     
     # PLOTTING FUNCTIONS
+
+    @staticmethod
+    def display_html_hack():
+        if PlotSaver.interactive and PlotSaver.is_colab:
+            # hack for displaying toolbar of interactive plots in Colab
+            html_hack = widgets.HTML("<style> .jupyter-matplotlib-figure { position: relative; } </style>")
+            display(html_hack)
 
     @staticmethod
     def create(**kwargs):
@@ -329,6 +338,7 @@ class PlotSaver():
 
         # show figures
         if show or PlotSaver.save_all:
+            PlotSaver.display_html_hack()
             grid = widgets.GridspecLayout(n_rows=int(np.ceil(len(plots)/ncols)), n_columns=ncols, width="{}in".format((figsize[0]+0.5)*ncols))
             for i, (fig, name) in enumerate(plots):
                 if fig is None:
