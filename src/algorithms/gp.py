@@ -3,7 +3,7 @@ from scipy.spatial.distance import cdist
 from sklearn.gaussian_process.kernels import RBF, ExpSineSquared, Matern, _check_length_scale
 
 import parameters as params
-from utils.math import polar_to_cartesian, polar_to_pixel
+from utils.math import polar_to_cartesian, polar_to_pixel, cartesian_product
 from utils.tools import Profiler
 
 
@@ -227,7 +227,7 @@ def build_kernel_matern_periodic_approx(sigma=1, l=1, nu=1.5, n_approx=1):
     k = Matern(length_scale=l, nu=nu)
     def kernel(X1, X2):
         X1, X2 = _atleast_2d(X1, X2)
-        ks = [k(X1 + i * 2*np.pi, X2) for i in range(-n_approx, n_approx+1)]
+        ks = [k(X1 + i * 2*np.pi, X2) for i in cartesian_product(*([range(-n_approx, n_approx+1)] * np.shape(X1)[1]))]
         return sigma**2 * np.sum(ks, axis=0)
     return kernel
 
