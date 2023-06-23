@@ -17,8 +17,8 @@ from algorithms.objectives import (
 )
 from algorithms.observations import Observations
 from simulation.camera import Camera
-from utils.math import is_in_range
-from utils.tools import LazyDict
+from utils_ext.math import is_in_range
+from utils_ext.tools import LazyDict
 
 TRUE_ALGORITHM = "Greedy-ObservedSurfaceMarginal"
 

@@ -2,7 +2,7 @@ import numpy as np
 
 import parameters as params
 from utils.math import polar_to_cartesian
-from utils.tools import LoopChecker
+from utils_ext.tools import LoopChecker
 
 
 class Camera():

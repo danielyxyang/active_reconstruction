@@ -4,7 +4,7 @@ from sklearn.gaussian_process.kernels import RBF, ExpSineSquared, Matern, _check
 
 import parameters as params
 from utils.math import polar_to_cartesian, polar_to_pixel
-from utils.tools import Profiler
+from utils_ext.tools import Profiler
 
 
 class GaussianProcess():

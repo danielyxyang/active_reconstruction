@@ -6,6 +6,8 @@ from utils.math import (
     cartesian_to_polar,
     cartesian_to_pixel,
     pixel_to_cartesian,
+)
+from utils_ext.math import (
     intersect_functions,
     is_in_range,
     setdiff2d,
