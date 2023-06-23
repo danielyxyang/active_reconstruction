@@ -62,9 +62,9 @@ class GaussianProcess():
         # compute posterior mean and covariance
         # reference: https://peterroelants.github.io/posts/gaussian-process-tutorial/
         noise = (self.noise ** 2) * np.eye(len(self.x))
-        sigma11 = self.kernel_func(self.x, self.x) + noise
-        sigma12 = self.kernel_func(self.x, x_eval)
-        sigma22 = self.kernel_func(x_eval, x_eval)
+        sigma11 = self.kernel_func(_atleast_2d(self.x), _atleast_2d(self.x)) + noise
+        sigma12 = self.kernel_func(_atleast_2d(self.x), _atleast_2d(x_eval))
+        sigma22 = self.kernel_func(_atleast_2d(x_eval), _atleast_2d(x_eval))
         reg = gamma * np.eye(len(self.x))
         solved = np.linalg.solve(sigma11 + reg, sigma12).T
         mean = self.mean_func(x_eval) + solved @ (self.y - self.mean_func(self.x))
