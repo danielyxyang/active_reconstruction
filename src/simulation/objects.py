@@ -2,7 +2,7 @@ import numpy as np
 
 import parameters as params
 from utils.math import polar_to_cartesian, polar_to_pixel
-from utils.tools import Profiler, LoopChecker
+from utils_ext.tools import Profiler, LoopChecker
 
 
 class Object():

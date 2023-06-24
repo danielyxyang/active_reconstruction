@@ -8,7 +8,7 @@ from matplotlib.patches import Circle, Rectangle, Wedge, Polygon
 import parameters as params
 from algorithms.algorithms import TRUE_ALGORITHM
 from utils.math import polar_to_cartesian, cartesian_to_polar, polar_to_pixel
-from utils.plotting import DynamicPlotter, MultipleTicks
+from utils_ext.plot import DynamicPlotter, MultipleTicks
 
 WORLD_COLORS = {
     "grid":             "gray",

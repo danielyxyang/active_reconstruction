@@ -3,8 +3,9 @@ from scipy.spatial.distance import cdist
 from sklearn.gaussian_process.kernels import RBF, ExpSineSquared, Matern, _check_length_scale
 
 import parameters as params
-from utils.math import polar_to_cartesian, polar_to_pixel, cartesian_product
-from utils.tools import Profiler
+from utils.math import polar_to_cartesian, polar_to_pixel
+from utils_ext.math import cartesian_product
+from utils_ext.tools import Profiler
 
 
 class GaussianProcess():
@@ -62,9 +63,9 @@ class GaussianProcess():
         # compute posterior mean and covariance
         # reference: https://peterroelants.github.io/posts/gaussian-process-tutorial/
         noise = (self.noise ** 2) * np.eye(len(self.x))
-        sigma11 = self.kernel_func(self.x, self.x) + noise
-        sigma12 = self.kernel_func(self.x, x_eval)
-        sigma22 = self.kernel_func(x_eval, x_eval)
+        sigma11 = self.kernel_func(_atleast_2d(self.x), _atleast_2d(self.x)) + noise
+        sigma12 = self.kernel_func(_atleast_2d(self.x), _atleast_2d(x_eval))
+        sigma22 = self.kernel_func(_atleast_2d(x_eval), _atleast_2d(x_eval))
         reg = gamma * np.eye(len(self.x))
         solved = np.linalg.solve(sigma11 + reg, sigma12).T
         mean = self.mean_func(x_eval) + solved @ (self.y - self.mean_func(self.x))

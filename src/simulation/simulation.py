@@ -4,7 +4,7 @@ import parameters as params
 from algorithms.gp import GaussianProcess, build_mean
 from algorithms.algorithms import Algorithm, build_algorithms, ALGORITHMS, TRUE_ALGORITHM
 from simulation.camera import Camera
-from utils.math import setdiff2d
+from utils_ext.math import setdiff2d
 
 
 class Simulation():

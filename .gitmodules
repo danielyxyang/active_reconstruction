@@ -1,0 +1,4 @@
+[submodule "src/utils_ext"]
+	path = src/utils_ext
+	url = https://github.com/danielyxyang/python-utils.git
+	branch = usedby-gp_manifolds
