@@ -1,6 +1,6 @@
 # Near-optimal Active Reconstruction
 
-This repository contains the accompanying code to my [bachelor thesis](https://danielyang.de/Bachelor%20Thesis.pdf) on "Near-optimal Active Reconstruction".
+This repository contains the accompanying code to my [bachelor thesis](https://arxiv.org/abs/2503.18999) on "Near-optimal Active Reconstruction".
 
 <img src="https://user-images.githubusercontent.com/44120873/232784452-7d9f2d6c-19b1-49b3-a7c3-310685b45464.gif" height="500">
 
